@@ -20,6 +20,13 @@ final class MealStore: ObservableObject {
     @Published var selectedImage: UIImage?
     @Published var errorMessage: String?
     @Published var isRefreshing: Bool = false
+    @Published var plan: AppPlan? {
+        didSet {
+            guard let plan else { return }
+            dailyGoal = Double(plan.targetCalories)
+        }
+    }
+    @Published var showingOnboarding: Bool = false
     
     init(
         meals: [MealEntry] = MealEntry.mockMeals,
@@ -30,11 +37,14 @@ final class MealStore: ObservableObject {
         detectedItems: [FoodItem] = MealStore.sampleDetections
     ) {
         self.meals = meals
-        self.dailyGoal = dailyGoal
+        let storedPlan = PlanStorage.load()
+        self.plan = storedPlan
+        self.dailyGoal = storedPlan.map { Double($0.targetCalories) } ?? dailyGoal
         self.selectedUnits = selectedUnits
         self.savePhotosLocally = savePhotosLocally
         self.syncHealthLater = syncHealthLater
         self.detectedItems = detectedItems
+        self.showingOnboarding = storedPlan == nil
     }
     
     var consumedCaloriesToday: Double {
@@ -64,6 +74,11 @@ final class MealStore: ObservableObject {
                 result.2 + meal.totalFat
             )
         }
+    }
+    
+    var macroTargets: (protein: Int, carbs: Int, fat: Int)? {
+        guard let plan else { return nil }
+        return (plan.proteinG, plan.carbsG, plan.fatG)
     }
     
     func refreshToday() async {
@@ -120,6 +135,32 @@ final class MealStore: ObservableObject {
     
     func clearError() {
         errorMessage = nil
+    }
+    
+    func updatePlan(_ plan: AppPlan) {
+        PlanStorage.save(plan)
+        withAnimation(.spring) {
+            self.plan = plan
+            self.dailyGoal = Double(plan.targetCalories)
+            showingOnboarding = false
+        }
+    }
+    
+    func presentPlanEditor() {
+        showingOnboarding = true
+    }
+    
+    func updateDailyGoal(to value: Double) {
+        let bounded = min(max(value, 1000), 6000)
+        dailyGoal = bounded
+        guard var plan else { return }
+        plan.targetCalories = Int(bounded.rounded())
+        let macros = Calculator.macroSplit(calories: bounded)
+        plan.proteinG = macros.protein
+        plan.carbsG = macros.carbs
+        plan.fatG = macros.fat
+        self.plan = plan
+        PlanStorage.save(plan)
     }
     
     static let sampleDetections: [FoodItem] = [

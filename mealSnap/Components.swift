@@ -89,6 +89,7 @@ struct MacroPill: View {
     var value: Double
     var unit: String
     var tint: Color
+    var secondaryText: String? = nil
     
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -98,6 +99,11 @@ struct MacroPill: View {
             Text("\(Int(value)) \(unit)")
                 .font(.headline)
                 .fontWeight(.medium)
+            if let secondaryText {
+                Text(secondaryText)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 14)
@@ -176,6 +182,104 @@ struct CalorieRing: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Calorie progress")
         .accessibilityValue("\(Int(calories)) of \(Int(goal)) calories")
+    }
+}
+
+struct LabeledField: View {
+    var title: String
+    var placeholder: String
+    @Binding var text: String
+    var keyboardType: UIKeyboardType = .default
+    var unit: String? = nil
+    var autocapitalization: TextInputAutocapitalization = .words
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+            HStack(spacing: 12) {
+                TextField(placeholder, text: $text)
+                    .keyboardType(keyboardType)
+                    .textInputAutocapitalization(autocapitalization)
+                    .disableAutocorrection(true)
+                if let unit {
+                    Text(unit)
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 14)
+            .background(Color.appSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(Color.white.opacity(0.05))
+            )
+        }
+    }
+}
+
+struct UnitToggle<UnitType: CaseIterable & Identifiable & Hashable>: View where UnitType.AllCases: RandomAccessCollection {
+    var title: String
+    @Binding var selection: UnitType
+    var label: (UnitType) -> String
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+            Picker(title, selection: $selection) {
+                ForEach(Array(UnitType.allCases), id: \.id) { unit in
+                    Text(label(unit))
+                        .tag(unit)
+                }
+            }
+            .pickerStyle(.segmented)
+        }
+    }
+}
+
+struct ErrorText: View {
+    var message: String
+    
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(Color.accentPrimary)
+            Text(message)
+                .font(.footnote)
+        }
+        .foregroundColor(.accentPrimary)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(Color.accentPrimary.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+}
+
+struct ProgressHeader: View {
+    var title: String
+    var subtitle: String?
+    var step: Int
+    var total: Int
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("STEP \(step) OF \(total)")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .kerning(0.8)
+            Text(title)
+                .font(.largeTitle.weight(.semibold))
+            if let subtitle, !subtitle.isEmpty {
+                Text(subtitle)
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+            }
+            ProgressView(value: Double(step), total: Double(total))
+                .tint(.accentPrimary)
+        }
     }
 }
 

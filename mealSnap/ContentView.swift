@@ -53,6 +53,15 @@ struct ContentView: View {
             .tag(AppTab.settings)
         }
         .environmentObject(store)
+        .fullScreenCover(isPresented: $store.showingOnboarding) {
+            OnboardingView(
+                viewModel: OnboardingViewModel(plan: store.plan),
+                allowDismissal: store.plan != nil
+            ) { plan in
+                store.updatePlan(plan)
+            }
+            .preferredColorScheme(.dark)
+        }
         .tint(.accentPrimary)
         .background(Color.appBackground)
         .preferredColorScheme(.dark)

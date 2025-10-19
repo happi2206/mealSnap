@@ -2,7 +2,7 @@
 //  mealSnapApp.swift
 //  mealSnap
 //
-//  Created by Happiness Adeboye on 18/10/2025.
+//  Created by Happiness Adeboye on 11/10/2025.
 //
 
 import SwiftUI

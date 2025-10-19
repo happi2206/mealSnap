@@ -14,6 +14,35 @@ struct SettingsView: View {
     
     var body: some View {
         Form {
+            Section("Nutrition plan") {
+                if let plan = store.plan {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("\(plan.name)'s targets")
+                            .font(.headline)
+                        Text("Goal: \(plan.goal.displayName), pace \(plan.pace.displayName.lowercased())")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        Text("Calories: \(plan.targetCalories) kcal")
+                            .font(.subheadline.weight(.semibold))
+                        Text("Macros • \(plan.proteinG)g protein • \(plan.carbsG)g carbs • \(plan.fatG)g fat")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 4)
+                } else {
+                    Text("Set up your personalized plan to tailor your dashboard.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                Button {
+                    store.lightImpact()
+                    store.presentPlanEditor()
+                } label: {
+                    Label("Recalculate Plan", systemImage: "wand.and.stars")
+                }
+            }
+            .listRowBackground(Color.appSurface)
+            
             Section("Calorie goal") {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
@@ -32,7 +61,7 @@ struct SettingsView: View {
                     Slider(value: Binding(
                         get: { store.dailyGoal },
                         set: { newValue in
-                            store.dailyGoal = newValue
+                            store.updateDailyGoal(to: newValue)
                             dailyGoalText = String(Int(newValue))
                         }
                     ), in: 1200...4000, step: 50)
@@ -98,8 +127,9 @@ struct SettingsView: View {
     private func applyGoalFromText() {
         let filtered = dailyGoalText.filter(\.isNumber)
         if let value = Double(filtered), value >= 1000 {
-            store.dailyGoal = min(max(value, 1000), 6000)
-            dailyGoalText = String(Int(store.dailyGoal))
+            let bounded = min(max(value, 1000), 6000)
+            store.updateDailyGoal(to: bounded)
+            dailyGoalText = String(Int(bounded))
         } else {
             dailyGoalText = String(Int(store.dailyGoal))
         }

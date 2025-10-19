@@ -21,6 +21,19 @@ struct TodayView: View {
         }
     }
     
+    private var displayName: String? {
+        guard let name = store.plan?.name.split(separator: " ").first else { return nil }
+        return String(name)
+    }
+    
+    private var greetingTitle: String {
+        if let displayName, !displayName.isEmpty {
+            return "\(greeting), \(displayName)"
+        } else {
+            return greeting
+        }
+    }
+    
     private var todayString: String {
         Date.now.formatted(.dateTime.weekday(.wide).month().day())
     }
@@ -55,7 +68,7 @@ struct TodayView: View {
     
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(greeting)
+            Text(greetingTitle)
                 .font(.largeTitle.weight(.bold))
                 .lineLimit(1)
             Text(todayString)
@@ -86,6 +99,17 @@ struct TodayView: View {
                         systemImage: "target"
                     )
                 }
+                if let targets = store.macroTargets {
+                    Divider()
+                        .overlay(Color.white.opacity(0.08))
+                    VStack(spacing: 6) {
+                        Text("Daily macros")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text("\(targets.protein)g protein • \(targets.carbs)g carbs • \(targets.fat)g fat")
+                            .font(.footnote.weight(.medium))
+                    }
+                }
             }
             .frame(maxWidth: .infinity)
         }
@@ -114,14 +138,33 @@ struct TodayView: View {
     
     private var macroSection: some View {
         let macros = store.macroTotalsToday
+        let targets = store.macroTargets
         return Card {
             VStack(alignment: .leading, spacing: 16) {
                 Text("Macros today")
                     .font(.headline)
                 HStack(spacing: 12) {
-                    MacroPill(label: "Protein", value: macros.protein, unit: "g", tint: .accentPrimary)
-                    MacroPill(label: "Carbs", value: macros.carbs, unit: "g", tint: .accentSecondary)
-                    MacroPill(label: "Fat", value: macros.fat, unit: "g", tint: .accentTertiary)
+                    MacroPill(
+                        label: "Protein",
+                        value: macros.protein,
+                        unit: "g",
+                        tint: .accentPrimary,
+                        secondaryText: targets.map { "of \($0.protein) g target" }
+                    )
+                    MacroPill(
+                        label: "Carbs",
+                        value: macros.carbs,
+                        unit: "g",
+                        tint: .accentSecondary,
+                        secondaryText: targets.map { "of \($0.carbs) g target" }
+                    )
+                    MacroPill(
+                        label: "Fat",
+                        value: macros.fat,
+                        unit: "g",
+                        tint: .accentTertiary,
+                        secondaryText: targets.map { "of \($0.fat) g target" }
+                    )
                 }
             }
         }
