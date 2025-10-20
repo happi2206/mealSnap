@@ -55,9 +55,9 @@ struct ContentView: View {
                 }
                 .tag(AppTab.settings)
             }
-            // .onAppear {
-            //     store.loadUserData()
-            // }
+            .onAppear {
+                store.loadUserData()
+            }
             .environmentObject(store)
             .fullScreenCover(isPresented: $store.showingOnboarding) {
                 OnboardingView(

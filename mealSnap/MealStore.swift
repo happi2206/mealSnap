@@ -37,14 +37,30 @@ final class MealStore: ObservableObject {
         detectedItems: [FoodItem] = MealStore.sampleDetections
     ) {
         self.meals = meals
-        let storedPlan = PlanStorage.load()
-        self.plan = storedPlan
-        self.dailyGoal = storedPlan.map { Double($0.targetCalories) } ?? dailyGoal
+//        let storedPlan = PlanStorage.load()
+//        self.plan = storedPlan
+//        self.dailyGoal = storedPlan.map { Double($0.targetCalories) } ?? dailyGoal
+        self.dailyGoal = dailyGoal
         self.selectedUnits = selectedUnits
         self.savePhotosLocally = savePhotosLocally
         self.syncHealthLater = syncHealthLater
         self.detectedItems = detectedItems
-        self.showingOnboarding = storedPlan == nil
+//        self.showingOnboarding = storedPlan == nil
+    }
+
+    func loadUserData() {
+        FirestoreService.shared.fetchUserPlan { plan, onboardingComplete in
+            DispatchQueue.main.async {
+                self.plan = plan
+                self.showingOnboarding = !onboardingComplete
+            }
+        }
+    }
+
+    func updatePlan(_ plan: AppPlan) {
+        self.plan = plan
+        FirestoreService.shared.saveUserPlan(plan)
+        self.showingOnboarding = false
     }
     
     var consumedCaloriesToday: Double {
@@ -137,14 +153,14 @@ final class MealStore: ObservableObject {
         errorMessage = nil
     }
     
-    func updatePlan(_ plan: AppPlan) {
-        PlanStorage.save(plan)
-        withAnimation(.spring) {
-            self.plan = plan
-            self.dailyGoal = Double(plan.targetCalories)
-            showingOnboarding = false
-        }
-    }
+//    func updatePlan(_ plan: AppPlan) {
+//        PlanStorage.save(plan)
+//        withAnimation(.spring) {
+//            self.plan = plan
+//            self.dailyGoal = Double(plan.targetCalories)
+//            showingOnboarding = false
+//        }
+//    }
     
     func presentPlanEditor() {
         showingOnboarding = true
