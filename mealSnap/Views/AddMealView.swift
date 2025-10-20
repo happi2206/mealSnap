@@ -12,6 +12,11 @@ struct AddMealView: View {
     @EnvironmentObject private var store: MealStore
     @State private var showErrorToast = false
     
+    // 🆕 New states for image picking
+        @State private var showImagePicker = false
+        @State private var imageSource: UIImagePickerController.SourceType = .photoLibrary
+        @State private var showSourceActionSheet = false
+    
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
@@ -42,17 +47,39 @@ struct AddMealView: View {
         })
         .toolbarBackground(Color.appBackground, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
+        // 🆕 Present image picker
+                .sheet(isPresented: $showImagePicker) {
+                    ImagePicker(selectedImage: $store.selectedImage, sourceType: imageSource)
+                }
+                // 🆕 Show source selection action sheet
+                .confirmationDialog("Select Image Source", isPresented: $showSourceActionSheet) {
+                    if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                        Button("Camera") {
+                            imageSource = .camera
+                            showImagePicker = true
+                        }
+                    }
+                    Button("Photo Library") {
+                        imageSource = .photoLibrary
+                        showImagePicker = true
+                    }
+                    Button("Cancel", role: .cancel) {}
+                }
     }
     
     private var captureControls: some View {
         HStack(spacing: 16) {
             captureButton(title: "Camera", systemImage: "camera.fill") {
                 store.lightImpact()
-                store.selectedImage = UIImage(systemName: "camera.macro")
+//                store.selectedImage = UIImage(systemName: "camera.macro")
+                imageSource = .camera
+                showImagePicker = true
             }
             captureButton(title: "Photos", systemImage: "photo.on.rectangle") {
                 store.lightImpact()
-                store.selectedImage = UIImage(systemName: "photo.stack")
+//                store.selectedImage = UIImage(systemName: "photo.stack")
+                imageSource = .photoLibrary
+                showImagePicker = true
             }
         }
         .accessibilityElement(children: .contain)

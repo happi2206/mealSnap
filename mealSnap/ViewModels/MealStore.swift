@@ -29,12 +29,14 @@ final class MealStore: ObservableObject {
     @Published var showingOnboarding: Bool = false
     
     init(
-        meals: [MealEntry] = MealEntry.mockMeals,
+//        meals: [MealEntry] = MealEntry.mockMeals,
+        meals: [ MealEntry ] = [],
         dailyGoal: Double = 2200,
         selectedUnits: Units = .grams,
         savePhotosLocally: Bool = true,
         syncHealthLater: Bool = false,
-        detectedItems: [FoodItem] = MealStore.sampleDetections
+//        detectedItems: [FoodItem] = MealStore.sampleDetections
+        detectedItems: [FoodItem] = []
     ) {
         self.meals = meals
 //        let storedPlan = PlanStorage.load()
@@ -53,6 +55,7 @@ final class MealStore: ObservableObject {
             DispatchQueue.main.async {
                 self.plan = plan
                 self.showingOnboarding = !onboardingComplete
+                self.dailyGoal = plan.map{ Double($0.targetCalories)} ?? self.dailyGoal
             }
         }
     }
