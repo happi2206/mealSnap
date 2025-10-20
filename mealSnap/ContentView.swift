@@ -18,53 +18,64 @@ struct ContentView: View {
     @StateObject private var store = MealStore()
     @State private var selectedTab: AppTab = .today
     
+    @StateObject private var authViewModel = AuthViewModel()
+    
     var body: some View {
-        TabView(selection: $selectedTab) {
-            NavigationStack {
-                TodayView(selectedTab: $selectedTab)
+        if authViewModel.user != nil{
+            TabView(selection: $selectedTab) {
+                NavigationStack {
+                    TodayView(selectedTab: $selectedTab)
+                }
+                .tabItem {
+                    Label("Today", systemImage: "sun.max")
+                }
+                .tag(AppTab.today)
+                
+                NavigationStack {
+                    AddMealView()
+                }
+                .tabItem {
+                    Label("Add", systemImage: "plus.circle")
+                }
+                .tag(AppTab.add)
+                
+                NavigationStack {
+                    DiaryView()
+                }
+                .tabItem {
+                    Label("Diary", systemImage: "book.pages")
+                }
+                .tag(AppTab.diary)
+                
+                NavigationStack {
+                    SettingsView().environmentObject(authViewModel)
+                }
+                .tabItem {
+                    Label("Settings", systemImage: "gearshape")
+                }
+                .tag(AppTab.settings)
             }
-            .tabItem {
-                Label("Today", systemImage: "sun.max")
+            // .onAppear {
+            //     store.loadUserData()
+            // }
+            .environmentObject(store)
+            .fullScreenCover(isPresented: $store.showingOnboarding) {
+                OnboardingView(
+                    viewModel: OnboardingViewModel(plan: store.plan),
+                    allowDismissal: store.plan != nil
+                ) { plan in
+                    store.updatePlan(plan)
+                }
+                .preferredColorScheme(.dark)
             }
-            .tag(AppTab.today)
-            
-            NavigationStack {
-                AddMealView()
-            }
-            .tabItem {
-                Label("Add", systemImage: "plus.circle")
-            }
-            .tag(AppTab.add)
-            
-            NavigationStack {
-                DiaryView()
-            }
-            .tabItem {
-                Label("Diary", systemImage: "book.pages")
-            }
-            .tag(AppTab.diary)
-            
-            NavigationStack {
-                SettingsView()
-            }
-            .tabItem {
-                Label("Settings", systemImage: "gearshape")
-            }
-            .tag(AppTab.settings)
-        }
-        .environmentObject(store)
-        .fullScreenCover(isPresented: $store.showingOnboarding) {
-            OnboardingView(
-                viewModel: OnboardingViewModel(plan: store.plan),
-                allowDismissal: store.plan != nil
-            ) { plan in
-                store.updatePlan(plan)
-            }
+            .tint(.accentPrimary)
+            .background(Color.appBackground)
             .preferredColorScheme(.dark)
         }
-        .tint(.accentPrimary)
-        .background(Color.appBackground)
-        .preferredColorScheme(.dark)
+        else{
+            LoginView()
+                .environmentObject(authViewModel)
+        }
     }
 }
 

@@ -9,6 +9,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject private var store: MealStore
+    @EnvironmentObject private var authViewModel: AuthViewModel
     @FocusState private var goalFieldFocused: Bool
     @State private var dailyGoalText: String = ""
     
@@ -93,6 +94,13 @@ struct SettingsView: View {
                 }
             }
             .listRowBackground(Color.appSurface)
+            
+            Section(header: Text("Account")) {
+                Button("Sign Out") {
+                    authViewModel.signOut()
+                }
+                .foregroundColor(.red)
+            }
             
             Section("About") {
                 VStack(alignment: .leading, spacing: 8) {
