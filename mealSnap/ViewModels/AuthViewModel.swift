@@ -1,39 +1,37 @@
 //
 //  AuthViewModel.swift
-//  mealSnap
+//  MealSnap
 //
 //  Created by Rujeet Prajapati on 20/10/2025.
 //
 
 import Foundation
 import FirebaseAuth
+import FirebaseFirestore
 
-// MARK: - Authentication ViewModel
-
-/// `AuthViewModel` manages all Firebase Authentication-related actions
-class AuthViewModel: ObservableObject {
-   
+/// Handles Firebase Authentication and user session state for MealSnap.
+@MainActor
+final class AuthViewModel: ObservableObject {
+    
     // MARK: - Published Properties
-    @Published var user: User? = nil
+    @Published var user: User?
     @Published var email: String = ""
     @Published var name: String = ""
     @Published var password: String = ""
     @Published var errorMessage: String = ""
     @Published var isLoading: Bool = false
     
-    // MARK: - Initializer
-        
-    /// Initializes the authentication view model.
+    private let db = Firestore.firestore()
+    
+    // MARK: - Initialization
     init() {
         self.user = Auth.auth().currentUser
-        Auth.auth().addStateDidChangeListener { _, user in
-            self.user = user
+        Auth.auth().addStateDidChangeListener { [weak self] _, user in
+            self?.user = user
         }
     }
     
     // MARK: - Sign Up
-        
-    /// Registers a new user in Firebase Authentication using the provided email, name, and password.
     func signUp() async {
         guard !email.isEmpty, !password.isEmpty else {
             errorMessage = "Email and password are required."
@@ -43,54 +41,81 @@ class AuthViewModel: ObservableObject {
             errorMessage = "Name is required."
             return
         }
+        guard password.count >= 6 else {
+            errorMessage = "Password must be at least 6 characters."
+            return
+        }
         
         isLoading = true
+        defer { isLoading = false }
+        
         do {
-            // Create the user
             let result = try await Auth.auth().createUser(withEmail: email, password: password)
-            user = result.user
+            let user = result.user
             
-            // Update the display name
-            let changeRequest = result.user.createProfileChangeRequest()
+            // Update Firebase Auth profile
+            let changeRequest = user.createProfileChangeRequest()
             changeRequest.displayName = name
             try await changeRequest.commitChanges()
             
+            // Create basic user doc in Firestore for later plan use
+            let userData: [String: Any] = [
+                "uid": user.uid,
+                "email": email,
+                "name": name,
+                "createdAt": Timestamp(date: Date()),
+                "onboardingComplete": false
+            ]
+            try await db.collection("users").document(user.uid).setData(userData)
+            
+            self.user = user
             errorMessage = ""
-            print(" User created with display name: \(name)")
+            print("✅ User created successfully with name: \(name)")
         } catch {
+            print("❌ Sign-up error: \(error.localizedDescription)")
             errorMessage = error.localizedDescription
         }
-        isLoading = false
     }
     
     // MARK: - Sign In
-        
-    /// Signs in an existing user using email and password credentials.
     func signIn() async {
         guard !email.isEmpty, !password.isEmpty else {
             errorMessage = "Email and password are required."
             return
         }
+        
         isLoading = true
+        defer { isLoading = false }
+        
         do {
             let result = try await Auth.auth().signIn(withEmail: email, password: password)
             self.user = result.user
             errorMessage = ""
+            print("✅ Signed in as: \(result.user.email ?? "")")
         } catch {
+            print("❌ Sign-in error: \(error.localizedDescription)")
             errorMessage = error.localizedDescription
         }
-        isLoading = false
     }
     
     // MARK: - Sign Out
-        
-    /// Signs out the current user from Firebase Authentication.
     func signOut() {
         do {
             try Auth.auth().signOut()
             self.user = nil
+            resetFields()
+            print("✅ User signed out successfully.")
         } catch {
             errorMessage = error.localizedDescription
         }
     }
+    
+    // MARK: - Reset Fields
+    func resetFields() {
+        email = ""
+        password = ""
+        name = ""
+        errorMessage = ""
+    }
 }
+

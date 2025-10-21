@@ -86,14 +86,15 @@ final class OnboardingViewModel: ObservableObject {
     }
     
     var ageValue: Int? {
-        guard let value = Int(age.trimmingCharacters(in: .whitespacesAndNewlines)), value >= minimumAge, value <= maximumAge else {
+        guard let value = Int(age.trimmingCharacters(in: .whitespacesAndNewlines)),
+              value >= minimumAge, value <= maximumAge else {
             return nil
         }
         return value
     }
     
     var heightValueCM: Double? {
-        let cm = Double(heightCM.replacingOccurrences(of: ",", with: ".")) ?? 0
+        let cm = Double(heightCM.replacingOccurrences(of: ",", with: ".")) ?? -1
         let feet = Double(heightFeet) ?? 0
         let inches = Double(heightInches) ?? 0
         let total = Calculator.heightInCentimeters(heightCM: cm, feet: feet, inches: inches, unit: heightUnit)
@@ -101,7 +102,7 @@ final class OnboardingViewModel: ObservableObject {
     }
     
     var weightValueKG: Double? {
-        let kg = Double(weightKG.replacingOccurrences(of: ",", with: ".")) ?? 0
+        let kg = Double(weightKG.replacingOccurrences(of: ",", with: ".")) ?? -1
         let lbs = Double(weightLBS.replacingOccurrences(of: ",", with: ".")) ?? 0
         let total = Calculator.weightInKilograms(weightKG: kg, weightLBS: lbs, unit: weightUnit)
         return total > 0 ? total : nil
@@ -173,8 +174,7 @@ final class OnboardingViewModel: ObservableObject {
         guard let height = heightValueCM,
               let weight = weightValueKG,
               let age = ageValue,
-              nameError == nil
-        else { return nil }
+              nameError == nil else { return nil }
         
         let bmiValue = bmi
         let bmrValue = bmr

@@ -210,9 +210,10 @@ struct TodayView: View {
     private func mealCard(for meal: MealEntry) -> some View {
         Card {
             VStack(alignment: .leading, spacing: 12) {
-                mealImage(for: meal.photo)
+                mealImage(for: meal.photoURL)
                     .frame(height: 120)
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                
                 Text(meal.date, style: .time)
                     .font(.headline)
                 Text("\(Int(meal.totalCalories)) kcal · \(meal.items.count) items")
@@ -221,13 +222,34 @@ struct TodayView: View {
             }
         }
     }
-    
-    private func mealImage(for image: UIImage?) -> some View {
+
+    // ✅ Updated to handle URL-based images
+    private func mealImage(for photoURL: String?) -> some View {
         Group {
-            if let image {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
+            if let urlString = photoURL, let url = URL(string: urlString) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .empty:
+                        ZStack {
+                            Color(.tertiarySystemFill)
+                            ProgressView()
+                                .tint(.gray)
+                        }
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    case .failure:
+                        ZStack {
+                            Color(.tertiarySystemFill)
+                            Image(systemName: "photo")
+                                .font(.title)
+                                .foregroundStyle(.secondary)
+                        }
+                    @unknown default:
+                        EmptyView()
+                    }
+                }
             } else {
                 ZStack {
                     Color(.tertiarySystemFill)
@@ -238,6 +260,7 @@ struct TodayView: View {
             }
         }
     }
+
 }
 
 #Preview {

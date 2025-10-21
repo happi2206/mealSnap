@@ -63,7 +63,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		1A4664972EA64F03009A360E /* Exceptions for "mealSnap" folder in "mealSnap" target */ = {
+		DB6A975F2EA6808700AEDCDB /* Exceptions for "mealSnap" folder in "mealSnap" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -91,7 +91,7 @@
 		3CD163662EA334E900EE2331 /* mealSnap */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				1A4664972EA64F03009A360E /* Exceptions for "mealSnap" folder in "mealSnap" target */,
+				DB6A975F2EA6808700AEDCDB /* Exceptions for "mealSnap" folder in "mealSnap" target */,
 			);
 			path = mealSnap;
 			sourceTree = "<group>";
@@ -122,9 +122,11 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1A76A7762EA60EB3001FA96E /* FirebaseCore in Frameworks */,
-				1A76A7742EA60EB2001FA96E /* FirebaseAuth in Frameworks */,
-				1A76A7782EA60EB3001FA96E /* FirebaseFirestore in Frameworks */,
+				DB6A976F2EA68E3800AEDCDB /* FirebaseCore in Frameworks */,
+				DB6A97732EA68E3800AEDCDB /* FirebaseFirestoreCombine-Community in Frameworks */,
+				DB6A976D2EA68E3800AEDCDB /* FirebaseAuth in Frameworks */,
+				DB6A97752EA68E3800AEDCDB /* FirebaseStorage in Frameworks */,
+				DB6A97712EA68E3800AEDCDB /* FirebaseFirestore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -221,9 +223,11 @@
 			);
 			name = mealSnap;
 			packageProductDependencies = (
-				1A76A7732EA60EB2001FA96E /* FirebaseAuth */,
-				1A76A7752EA60EB3001FA96E /* FirebaseCore */,
-				1A76A7772EA60EB3001FA96E /* FirebaseFirestore */,
+				DB6A976C2EA68E3800AEDCDB /* FirebaseAuth */,
+				DB6A976E2EA68E3800AEDCDB /* FirebaseCore */,
+				DB6A97702EA68E3800AEDCDB /* FirebaseFirestore */,
+				DB6A97722EA68E3800AEDCDB /* FirebaseFirestoreCombine-Community */,
+				DB6A97742EA68E3800AEDCDB /* FirebaseStorage */,
 			);
 			productName = mealSnap;
 			productReference = 3CD163642EA334E900EE2331 /* mealSnap.app */;
@@ -311,7 +315,7 @@
 			mainGroup = 3CD1635B2EA334E900EE2331;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				1A76A7722EA60EB2001FA96E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				DB6A976B2EA68E3800AEDCDB /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 3CD163652EA334E900EE2331 /* Products */;
@@ -592,12 +596,9 @@
 				CODE_SIGN_ENTITLEMENTS = mealSnap/mealSnap.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = HY7RH2G77C;
+				DEVELOPMENT_TEAM = TF7RU5KFTT;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = mealSnap/Info.plist;
-				INFOPLIST_KEY_NSCameraUsageDescription = "This app needs access to the camera to take meal photos.";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "This app needs access to your photo library to select meal images.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -625,12 +626,9 @@
 				CODE_SIGN_ENTITLEMENTS = mealSnap/mealSnap.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = HY7RH2G77C;
+				DEVELOPMENT_TEAM = TF7RU5KFTT;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = mealSnap/Info.plist;
-				INFOPLIST_KEY_NSCameraUsageDescription = "This app needs access to the camera to take meal photos.";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "This app needs access to your photo library to select meal images.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -773,7 +771,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		1A76A7722EA60EB2001FA96E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+		DB6A976B2EA68E3800AEDCDB /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
 			requirement = {
@@ -784,20 +782,30 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		1A76A7732EA60EB2001FA96E /* FirebaseAuth */ = {
+		DB6A976C2EA68E3800AEDCDB /* FirebaseAuth */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 1A76A7722EA60EB2001FA96E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			package = DB6A976B2EA68E3800AEDCDB /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseAuth;
 		};
-		1A76A7752EA60EB3001FA96E /* FirebaseCore */ = {
+		DB6A976E2EA68E3800AEDCDB /* FirebaseCore */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 1A76A7722EA60EB2001FA96E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			package = DB6A976B2EA68E3800AEDCDB /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseCore;
 		};
-		1A76A7772EA60EB3001FA96E /* FirebaseFirestore */ = {
+		DB6A97702EA68E3800AEDCDB /* FirebaseFirestore */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 1A76A7722EA60EB2001FA96E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			package = DB6A976B2EA68E3800AEDCDB /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseFirestore;
+		};
+		DB6A97722EA68E3800AEDCDB /* FirebaseFirestoreCombine-Community */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DB6A976B2EA68E3800AEDCDB /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = "FirebaseFirestoreCombine-Community";
+		};
+		DB6A97742EA68E3800AEDCDB /* FirebaseStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DB6A976B2EA68E3800AEDCDB /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseStorage;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

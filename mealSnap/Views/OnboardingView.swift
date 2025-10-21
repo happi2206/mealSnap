@@ -140,126 +140,15 @@ private struct ProfileStep: View {
                 
                 Card {
                     VStack(spacing: 18) {
-                        LabeledField(
-                            title: "Name",
-                            placeholder: "You",
-                            text: $viewModel.name,
-                            autocapitalization: .words
-                        )
-                        .focused($focusField, equals: .name)
-                        if let error = viewModel.nameError {
-                            fieldError(error)
-                        }
-                        
-                        LabeledField(
-                            title: "Age",
-                            placeholder: "28",
-                            text: $viewModel.age,
-                            keyboardType: .numberPad,
-                            autocapitalization: .never
-                        )
-                        .focused($focusField, equals: .age)
-                        .onChange(of: viewModel.age) { _, newValue in
-                            viewModel.age = newValue.filter { $0.isNumber }
-                        }
-                        if let error = viewModel.ageError {
-                            fieldError(error)
-                        }
-                        
-                        VStack(spacing: 16) {
-                            UnitToggle(title: "Height units", selection: $viewModel.heightUnit) { unit in
-                                unit.display
-                            }
-                            if viewModel.heightUnit == .metric {
-                                LabeledField(
-                                    title: "Height",
-                                    placeholder: "170",
-                                    text: $viewModel.heightCM,
-                                    keyboardType: .decimalPad,
-                                    unit: "cm",
-                                    autocapitalization: .never
-                                )
-                                .focused($focusField, equals: .height)
-                                .onChange(of: viewModel.heightCM) { _, newValue in
-                                    viewModel.heightCM = sanitizeDecimal(newValue)
-                                }
-                            } else {
-                                HStack(spacing: 16) {
-                                    LabeledField(
-                                        title: "Feet",
-                                        placeholder: "5",
-                                        text: $viewModel.heightFeet,
-                                        keyboardType: .numberPad,
-                                        autocapitalization: .never
-                                    )
-                                    .focused($focusField, equals: .heightFeet)
-                                    .onChange(of: viewModel.heightFeet) { _, newValue in
-                                        viewModel.heightFeet = newValue.filter { $0.isNumber }
-                                    }
-                                    
-                                    LabeledField(
-                                        title: "Inches",
-                                        placeholder: "9",
-                                        text: $viewModel.heightInches,
-                                        keyboardType: .numberPad,
-                                        autocapitalization: .never
-                                    )
-                                    .focused($focusField, equals: .heightInches)
-                                    .onChange(of: viewModel.heightInches) { _, newValue in
-                                        viewModel.heightInches = newValue.filter { $0.isNumber }
-                                    }
-                                }
-                            }
-                            if let error = viewModel.heightError {
-                                fieldError(error)
-                            }
-                        }
-                        
-                        VStack(spacing: 16) {
-                            UnitToggle(title: "Weight units", selection: $viewModel.weightUnit) { unit in
-                                unit.display
-                            }
-                            if viewModel.weightUnit == .metric {
-                                LabeledField(
-                                    title: "Weight",
-                                    placeholder: "65",
-                                    text: $viewModel.weightKG,
-                                    keyboardType: .decimalPad,
-                                    unit: "kg",
-                                    autocapitalization: .never
-                                )
-                                .focused($focusField, equals: .weight)
-                                .onChange(of: viewModel.weightKG) { _, newValue in
-                                    viewModel.weightKG = sanitizeDecimal(newValue)
-                                }
-                            } else {
-                                LabeledField(
-                                    title: "Weight",
-                                    placeholder: "145",
-                                    text: $viewModel.weightLBS,
-                                    keyboardType: .decimalPad,
-                                    unit: "lb",
-                                    autocapitalization: .never
-                                )
-                                .focused($focusField, equals: .weightLbs)
-                                .onChange(of: viewModel.weightLBS) { _, newValue in
-                                    viewModel.weightLBS = sanitizeDecimal(newValue)
-                                }
-                            }
-                            if let error = viewModel.weightError {
-                                fieldError(error)
-                            }
-                        }
-                        
-                        Picker("Sex", selection: $viewModel.sex) {
-                            ForEach(Sex.allCases) { sex in
-                                Text(sex.displayName).tag(sex)
-                            }
-                        }
-                        .pickerStyle(.segmented)
+                        nameField
+                        ageField
+                        heightSection
+                        weightSection
+                        sexPicker
                     }
                 }
             }
+            
             PrimaryButton(title: "Next", systemImage: "arrow.right") {
                 onNext()
             }
@@ -273,8 +162,157 @@ private struct ProfileStep: View {
         .toolbarBackground(Color.appBackground, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
     }
-    
-    private func sanitizeDecimal(_ value: String) -> String {
+}
+
+// MARK: - Subviews
+private extension ProfileStep {
+    var nameField: some View {
+        VStack {
+            LabeledField(
+                title: "Name",
+                placeholder: "You",
+                text: $viewModel.name,
+                autocapitalization: .words
+            )
+            .focused($focusField, equals: .name)
+            if let error = viewModel.nameError {
+                fieldError(error)
+            }
+        }
+    }
+
+    var ageField: some View {
+        VStack {
+            LabeledField(
+                title: "Age",
+                placeholder: "28",
+                text: $viewModel.age,
+                keyboardType: .numberPad,
+                autocapitalization: .none
+            )
+            .focused($focusField, equals: .age)
+            .onChange(of: viewModel.age) { _, newValue in
+                viewModel.age = newValue.filter { $0.isNumber }
+            }
+            if let error = viewModel.ageError {
+                fieldError(error)
+            }
+        }
+    }
+
+    var heightSection: some View {
+        VStack(spacing: 16) {
+            UnitToggle(
+                title: "Height units",
+                selection: $viewModel.heightUnit,
+                options: HeightUnit.allCases
+            ) { unit in
+                unit.display
+            }
+
+            if viewModel.heightUnit == .metric {
+                LabeledField(
+                    title: "Height",
+                    placeholder: "170",
+                    text: $viewModel.heightCM,
+                    keyboardType: .decimalPad,
+                    autocapitalization: .none
+                )
+                .focused($focusField, equals: .height)
+                .onChange(of: viewModel.heightCM) { _, newValue in
+                    viewModel.heightCM = sanitizeDecimal(newValue)
+                }
+            } else {
+                imperialHeightFields
+            }
+
+            if let error = viewModel.heightError {
+                fieldError(error)
+            }
+        }
+    }
+
+    var imperialHeightFields: some View {
+        HStack(spacing: 16) {
+            LabeledField(
+                title: "Feet",
+                placeholder: "5",
+                text: $viewModel.heightFeet,
+                keyboardType: .numberPad,
+                autocapitalization: .none
+            )
+            .focused($focusField, equals: .heightFeet)
+            .onChange(of: viewModel.heightFeet) { _, newValue in
+                viewModel.heightFeet = newValue.filter { $0.isNumber }
+            }
+
+            LabeledField(
+                title: "Inches",
+                placeholder: "9",
+                text: $viewModel.heightInches,
+                keyboardType: .numberPad,
+                autocapitalization: .none
+            )
+            .focused($focusField, equals: .heightInches)
+            .onChange(of: viewModel.heightInches) { _, newValue in
+                viewModel.heightInches = newValue.filter { $0.isNumber }
+            }
+        }
+    }
+
+    var weightSection: some View {
+        VStack(spacing: 16) {
+            UnitToggle(
+                title: "Weight units",
+                selection: $viewModel.weightUnit,
+                options: WeightUnit.allCases
+            ) { unit in
+                unit.display
+            }
+
+            if viewModel.weightUnit == .metric {
+                LabeledField(
+                    title: "Weight",
+                    placeholder: "65",
+                    text: $viewModel.weightKG,
+                    keyboardType: .decimalPad,
+                    
+                    autocapitalization: .none
+                )
+                .focused($focusField, equals: .weight)
+                .onChange(of: viewModel.weightKG) { _, newValue in
+                    viewModel.weightKG = sanitizeDecimal(newValue)
+                }
+            } else {
+                LabeledField(
+                    title: "Weight",
+                    placeholder: "145",
+                    text: $viewModel.weightLBS,
+                    keyboardType: .decimalPad,
+                    autocapitalization: .none
+                )
+                .focused($focusField, equals: .weightLbs)
+                .onChange(of: viewModel.weightLBS) { _, newValue in
+                    viewModel.weightLBS = sanitizeDecimal(newValue)
+                }
+            }
+
+            if let error = viewModel.weightError {
+                fieldError(error)
+            }
+        }
+    }
+
+    var sexPicker: some View {
+        Picker("Sex", selection: $viewModel.sex) {
+            ForEach(Sex.allCases) { sex in
+                Text(sex.displayName).tag(sex)
+            }
+        }
+        .pickerStyle(.segmented)
+    }
+
+    func sanitizeDecimal(_ value: String) -> String {
         var filtered = value.filter { "0123456789.,".contains($0) }
         if let firstDot = filtered.firstIndex(of: ".") {
             let suffix = filtered[firstDot...].dropFirst().replacingOccurrences(of: ".", with: "")
@@ -286,9 +324,9 @@ private struct ProfileStep: View {
         }
         return filtered
     }
-    
+
     @ViewBuilder
-    private func fieldError(_ message: String) -> some View {
+    func fieldError(_ message: String) -> some View {
         ErrorText(message: message)
             .transition(.opacity)
     }
@@ -300,33 +338,10 @@ private struct ActivityStep: View {
     
     var body: some View {
         VStack(spacing: 24) {
-            ProgressHeader(
-                title: "How active are you?",
-                subtitle: "Helps us estimate how many calories you burn in a day.",
-                step: OnboardingStep.activity.position,
-                total: OnboardingStep.totalSteps
-            )
-            
-            VStack(spacing: 16) {
-                ForEach(ActivityLevel.allCases) { level in
-                    SelectableOption(
-                        title: level.displayName,
-                        subtitle: level.description,
-                        isSelected: viewModel.activity == level,
-                        systemImage: icon(for: level)
-                    ) {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                            viewModel.activity = level
-                        }
-                    }
-                }
-            }
-            
+            header
+            activityOptions
             Spacer()
-            
-            PrimaryButton(title: "Next", systemImage: "arrow.right") {
-                onNext()
-            }
+            nextButton
         }
         .padding(.horizontal, 24)
         .padding(.vertical, 32)
@@ -336,16 +351,50 @@ private struct ActivityStep: View {
         .toolbarColorScheme(.dark, for: .navigationBar)
     }
     
+    // MARK: - Subviews
+    private var header: some View {
+        ProgressHeader(
+            title: "How active are you?",
+            subtitle: "Helps us estimate how many calories you burn in a day.",
+            step: OnboardingStep.activity.position,
+            total: OnboardingStep.totalSteps
+        )
+    }
+    
+    private var activityOptions: some View {
+        VStack(spacing: 16) {
+            ForEach(ActivityLevel.allCases, id: \.id) { level in
+                SelectableOption(
+                    title: level.displayName,
+                    subtitle: level.description,
+                    isSelected: viewModel.activity == level,
+                    systemImage: icon(for: level)
+                ) {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        viewModel.activity = level
+                    }
+                }
+            }
+        }
+    }
+
+    
+    private var nextButton: some View {
+        PrimaryButton(title: "Next", systemImage: "arrow.right") {
+            onNext()
+        }
+    }
+    
     private func icon(for level: ActivityLevel) -> String {
         switch level {
         case .sedentary: return "chair.fill"
         case .light: return "figure.walk"
         case .moderate: return "bicycle"
         case .active: return "figure.run"
-        case .veryActive: return "flame.fill"
         }
     }
 }
+
 
 private struct GoalStep: View {
     @ObservedObject var viewModel: OnboardingViewModel
@@ -353,33 +402,10 @@ private struct GoalStep: View {
     
     var body: some View {
         VStack(spacing: 24) {
-            ProgressHeader(
-                title: "Choose your goal",
-                subtitle: "MealSnap will tune your calories and macros around this.",
-                step: OnboardingStep.goal.position,
-                total: OnboardingStep.totalSteps
-            )
-            
-            VStack(spacing: 16) {
-                ForEach(Goal.allCases) { goal in
-                    SelectableOption(
-                        title: goal.displayName,
-                        subtitle: goalSubtitle(goal),
-                        isSelected: viewModel.goal == goal,
-                        systemImage: goalIcon(goal)
-                    ) {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                            viewModel.goal = goal
-                        }
-                    }
-                }
-            }
-            
+            header
+            goalOptions
             Spacer()
-            
-            PrimaryButton(title: "Next", systemImage: "arrow.right") {
-                onNext()
-            }
+            nextButton
         }
         .padding(.horizontal, 24)
         .padding(.vertical, 32)
@@ -388,6 +414,46 @@ private struct GoalStep: View {
         .toolbarBackground(Color.appBackground, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
     }
+    
+    // MARK: - Subviews
+    
+    private var header: some View {
+        ProgressHeader(
+            title: "Choose your goal",
+            subtitle: "MealSnap will tune your calories and macros around this.",
+            step: OnboardingStep.goal.position,
+            total: OnboardingStep.totalSteps
+        )
+    }
+    
+    private var goalOptions: some View {
+        VStack(spacing: 16) {
+            ForEach(Goal.allCases) { goal in
+                goalOption(for: goal)
+            }
+        }
+    }
+    
+    private func goalOption(for goal: Goal) -> some View {
+        SelectableOption(
+            title: goal.displayName,
+            subtitle: goalSubtitle(goal),
+            isSelected: viewModel.goal == goal,
+            systemImage: goalIcon(goal)
+        ) {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                viewModel.goal = goal
+            }
+        }
+    }
+    
+    private var nextButton: some View {
+        PrimaryButton(title: "Next", systemImage: "arrow.right") {
+            onNext()
+        }
+    }
+    
+    // MARK: - Helpers
     
     private func goalSubtitle(_ goal: Goal) -> String {
         switch goal {
@@ -409,7 +475,7 @@ private struct GoalStep: View {
 private struct PaceStep: View {
     @ObservedObject var viewModel: OnboardingViewModel
     var onNext: () -> Void
-    
+
     var body: some View {
         VStack(spacing: 24) {
             ProgressHeader(
@@ -418,24 +484,11 @@ private struct PaceStep: View {
                 step: OnboardingStep.pace.position,
                 total: OnboardingStep.totalSteps
             )
-            
-            VStack(spacing: 16) {
-                ForEach(Pace.allCases) { pace in
-                    SelectableOption(
-                        title: pace.displayName,
-                        subtitle: pace.description,
-                        isSelected: viewModel.pace == pace,
-                        systemImage: paceIcon(pace)
-                    ) {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                            viewModel.pace = pace
-                        }
-                    }
-                }
-            }
-            
+
+            paceOptions
+
             Spacer()
-            
+
             PrimaryButton(title: "Next", systemImage: "arrow.right") {
                 onNext()
             }
@@ -447,15 +500,38 @@ private struct PaceStep: View {
         .toolbarBackground(Color.appBackground, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
     }
-    
+
+    // 👇 Split ForEach out to reduce type inference load
+    private var paceOptions: some View {
+        VStack(spacing: 16) {
+            ForEach(Pace.allCases, id: \.id) { pace in
+                SelectableOption(
+                    title: pace.displayName,
+                    subtitle:"",
+                    // ❌ Removed subtitle: pace.description
+                    isSelected: viewModel.pace == pace,
+                    systemImage: paceIcon(pace)
+                ) {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        viewModel.pace = pace
+                    }
+                }
+            }
+        }
+    }
+
+
     private func paceIcon(_ pace: Pace) -> String {
         switch pace {
         case .slow: return "tortoise.fill"
         case .moderate: return "gauge.medium"
         case .fast: return "hare.fill"
+        case .description:
+           return "hare.fill"
         }
     }
 }
+
 
 private struct ReviewStep: View {
     @ObservedObject var viewModel: OnboardingViewModel
@@ -501,7 +577,7 @@ private struct ReviewStep: View {
                     VStack(alignment: .leading, spacing: 16) {
                         Text("Summary")
                             .font(.headline)
-                        Text("\(viewModel.trimmedName) • \(viewModel.sex.displayName) • \(viewModel.ageValue ?? 0)")
+                        Text("\(viewModel.trimmedName) •  \(viewModel.ageValue ?? 0)")
                             .font(.title3.weight(.semibold))
                         Text("\(viewModel.goal.displayName) • \(viewModel.pace.displayName) pace • \(viewModel.activity.displayName) activity")
                             .foregroundStyle(.secondary)
@@ -670,6 +746,20 @@ private struct SelectableOption: View {
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+}
+
+
+struct ErrorText: View {
+    var message: String
+
+    var body: some View {
+        Text(message)
+            .font(.caption)
+            .foregroundColor(.red)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, 2)
+            .transition(.opacity)
     }
 }
 

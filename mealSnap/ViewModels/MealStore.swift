@@ -32,22 +32,18 @@ final class MealStore: ObservableObject {
         meals: [MealEntry] = MealEntry.mockMeals,
 //        meals: [ MealEntry ] = [],
         dailyGoal: Double = 2200,
-        selectedUnits: Units = .grams,
+        selectedUnits: Units = .metric, // fixed to valid enum
         savePhotosLocally: Bool = true,
         syncHealthLater: Bool = false,
         detectedItems: [FoodItem] = MealStore.sampleDetections
 //        detectedItems: [FoodItem] = []
     ) {
         self.meals = meals
-//        let storedPlan = PlanStorage.load()
-//        self.plan = storedPlan
-//        self.dailyGoal = storedPlan.map { Double($0.targetCalories) } ?? dailyGoal
         self.dailyGoal = dailyGoal
         self.selectedUnits = selectedUnits
         self.savePhotosLocally = savePhotosLocally
         self.syncHealthLater = syncHealthLater
         self.detectedItems = detectedItems
-//        self.showingOnboarding = storedPlan == nil
     }
 
     func loadUserData() {
@@ -55,7 +51,7 @@ final class MealStore: ObservableObject {
             DispatchQueue.main.async {
                 self.plan = plan
                 self.showingOnboarding = !onboardingComplete
-                self.dailyGoal = plan.map{ Double($0.targetCalories)} ?? self.dailyGoal
+                self.dailyGoal = plan.map { Double($0.targetCalories) } ?? self.dailyGoal
             }
         }
     }
@@ -118,16 +114,26 @@ final class MealStore: ObservableObject {
         }
     }
     
+    // ✅ FIXED: Corrected `photo:` -> `photoURL:` and converted UIImage to temporary URL
     func saveDetectedItemsToDiary() {
         guard !detectedItems.isEmpty else {
             errorMessage = "No items detected yet."
             softErrorHaptic()
             return
         }
-        
+
+        var photoPath: String? = nil
+        if let image = selectedImage,
+           let data = image.jpegData(compressionQuality: 0.8) {
+            let filename = "\(UUID().uuidString).jpg"
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+            try? data.write(to: url)
+            photoPath = url.absoluteString
+        }
+
         let newMeal = MealEntry(
             date: Date(),
-            photo: selectedImage ?? UIImage(systemName: "camera.viewfinder"),
+            photoURL: photoPath,
             items: detectedItems
         )
         
@@ -155,15 +161,6 @@ final class MealStore: ObservableObject {
     func clearError() {
         errorMessage = nil
     }
-    
-//    func updatePlan(_ plan: AppPlan) {
-//        PlanStorage.save(plan)
-//        withAnimation(.spring) {
-//            self.plan = plan
-//            self.dailyGoal = Double(plan.targetCalories)
-//            showingOnboarding = false
-//        }
-//    }
     
     func presentPlanEditor() {
         showingOnboarding = true
@@ -214,7 +211,6 @@ final class MealStore: ObservableObject {
 }
 
 // MARK: - Haptic Helpers
-
 extension MealStore {
     private func successHaptic() {
         let generator = UINotificationFeedbackGenerator()
@@ -242,3 +238,4 @@ extension MealStore {
     .padding()
     .preferredColorScheme(.dark)
 }
+
