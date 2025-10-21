@@ -35,7 +35,7 @@ struct FoodItem: Identifiable, Hashable {
 }
 
 struct MealEntry: Identifiable {
-    let id = UUID()
+    var id = UUID()
     var date: Date
     var photo: UIImage?
     var items: [FoodItem]

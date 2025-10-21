@@ -11,7 +11,7 @@ struct PlanStorage {
     private static let key = "com.mealsnap.plan"
     
     static func load() -> AppPlan? {
-        guard let data = UserDefaults.standard.data(forKey: key) else { return nil }
+        guard let data = UserDefaults(suiteName: "group.com.advancediOS.mealsnap")?.data(forKey: key) else { return nil }
         let decoder = JSONDecoder()
         return try? decoder.decode(AppPlan.self, from: data)
     }
@@ -19,10 +19,15 @@ struct PlanStorage {
     static func save(_ plan: AppPlan) {
         let encoder = JSONEncoder()
         guard let data = try? encoder.encode(plan) else { return }
-        UserDefaults.standard.set(data, forKey: key)
+        UserDefaults(suiteName: "group.com.advancediOS.mealsnap")?.set(data, forKey: key)
     }
     
     static func clear() {
         UserDefaults.standard.removeObject(forKey: key)
+    }
+    
+    func loadTotalCalories() -> Int {
+        return UserDefaults(suiteName: "group.com.advancediOS.mealsnap")?
+            .integer(forKey: "totalCalories") ?? 0
     }
 }
