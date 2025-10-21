@@ -69,10 +69,28 @@ struct MealDetailView: View {
                 Text("Photo")
                     .font(.headline)
                 Group {
-                    if let photo = meal.photo {
-                        Image(uiImage: photo)
-                            .resizable()
-                            .scaledToFill()
+                    if let urlString = meal.photoURL,
+                       let url = URL(string: urlString) {
+                        AsyncImage(url: url) { phase in
+                            switch phase {
+                            case .empty:
+                                ProgressView()
+                                    .frame(height: 240)
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                            case .failure:
+                                ZStack {
+                                    Color.appSurface.opacity(0.6)
+                                    Image(systemName: "photo")
+                                        .font(.largeTitle)
+                                        .foregroundStyle(.secondary)
+                                }
+                            @unknown default:
+                                EmptyView()
+                            }
+                        }
                     } else {
                         ZStack {
                             Color.appSurface.opacity(0.6)
@@ -87,6 +105,7 @@ struct MealDetailView: View {
             }
         }
     }
+
     
     private func summarySection(meal: MealEntry) -> some View {
         Card {

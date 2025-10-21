@@ -7,25 +7,34 @@
 
 import Foundation
 
+/// A centralized nutrition and health calculation engine
 enum Calculator {
+    
+    // MARK: - Unit Conversions
+    
     static func heightInCentimeters(heightCM: Double, feet: Double, inches: Double, unit: HeightUnit) -> Double {
         switch unit {
-        case .metric:
+        case .metric, .centimeters:
+            // Height is already in centimeters
             return max(heightCM, 0)
-        case .imperial:
+        case .imperial, .inches:
+            // Convert feet + inches to centimeters
             let totalInches = (feet * 12) + inches
             return totalInches * 2.54
         }
     }
-    
+
     static func weightInKilograms(weightKG: Double, weightLBS: Double, unit: WeightUnit) -> Double {
         switch unit {
-        case .metric:
+        case .metric, .kilograms:
+            // Weight is already in kilograms
             return max(weightKG, 0)
-        case .imperial:
+        case .imperial, .pounds:
+            // Convert pounds to kilograms
             return weightLBS / 2.205
         }
     }
+
     
     static func kilogramsToPounds(_ kilograms: Double) -> Double {
         kilograms * 2.205
@@ -43,10 +52,12 @@ enum Calculator {
         return (feet, inches)
     }
     
+    // MARK: - Health Metrics
+    
     static func bmi(weightKG: Double, heightCM: Double) -> Double {
         let heightM = heightCM / 100
         guard heightM > 0 else { return 0 }
-        return weightKG / (heightM * heightM)
+        return (weightKG / (heightM * heightM)).rounded(toPlaces: 2)
     }
     
     static func bmiCategory(_ bmi: Double) -> String {
@@ -60,13 +71,15 @@ enum Calculator {
     
     static func bmr(weightKG: Double, heightCM: Double, age: Int, sex: Sex) -> Double {
         let base = (10 * weightKG) + (6.25 * heightCM) - (5 * Double(age))
-        let sexOffset = sex == .male ? 5 : -161
-        return base + Double(sexOffset)
+        let sexOffset = (sex == .male) ? 5.0 : -161.0
+        return (base + sexOffset).rounded(toPlaces: 2)
     }
     
     static func tdee(bmr: Double, activity: ActivityLevel) -> Double {
-        max(bmr * activity.multiplier, 0)
+        max((bmr * activity.multiplier).rounded(toPlaces: 2), 0)
     }
+    
+    // MARK: - Goal Adjustments
     
     static func paceOffset(for goal: Goal, pace: Pace) -> Double {
         let offset: Double
@@ -74,21 +87,22 @@ enum Calculator {
         case .slow: offset = 250
         case .moderate: offset = 425
         case .fast: offset = 650
+        case .description: offset = 650
+            
         }
         switch goal {
-        case .loseWeight:
-            return -offset
-        case .maintain:
-            return 0
-        case .gainMuscle:
-            return offset
+        case .loseWeight: return -offset
+        case .maintain: return 0
+        case .gainMuscle: return offset
         }
     }
     
     static func adjustedCalories(tdee: Double, goal: Goal, pace: Pace) -> Double {
         let offset = paceOffset(for: goal, pace: pace)
-        return max(tdee + offset, 1200)
+        return max((tdee + offset).rounded(toPlaces: 2), 1200)
     }
+    
+    // MARK: - Macronutrients
     
     static func macroSplit(calories: Double) -> (protein: Int, carbs: Int, fat: Int) {
         let proteinCalories = calories * 0.30
@@ -103,30 +117,17 @@ enum Calculator {
     }
 }
 
-enum HeightUnit: String, CaseIterable, Codable, Identifiable {
-    case metric
-    case imperial
-    
-    var id: String { rawValue }
-    
-    var display: String {
-        switch self {
-        case .metric: return "cm"
-        case .imperial: return "ft / in"
-        }
+// MARK: - Height & Weight Units
+
+
+
+// MARK: - Rounding Helper
+
+extension Double {
+    /// Rounds the double to the specified number of decimal places.
+    func rounded(toPlaces places: Int) -> Double {
+        let divisor = pow(10.0, Double(places))
+        return (self * divisor).rounded() / divisor
     }
 }
 
-enum WeightUnit: String, CaseIterable, Codable, Identifiable {
-    case metric
-    case imperial
-    
-    var id: String { rawValue }
-    
-    var display: String {
-        switch self {
-        case .metric: return "kg"
-        case .imperial: return "lb"
-        }
-    }
-}

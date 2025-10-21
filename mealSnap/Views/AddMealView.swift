@@ -13,16 +13,21 @@ struct AddMealView: View {
     @State private var showErrorToast = false
     
     // 🆕 New states for image picking
-        @State private var showImagePicker = false
-        @State private var imageSource: UIImagePickerController.SourceType = .photoLibrary
-        @State private var showSourceActionSheet = false
+    @State private var showImagePicker = false
+    @State private var imageSource: UIImagePickerController.SourceType = .photoLibrary
+    @State private var showSourceActionSheet = false
     
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 captureControls
+                
+                // 🆕 NEW: Barcode scanning button
+                scanBarcodeSection
+                
                 imagePreview
                 detectedItemsSection
+                
                 PrimaryButton(title: "Save to Diary", systemImage: "tray.and.arrow.down.fill") {
                     store.saveDetectedItemsToDiary()
                     if store.errorMessage != nil {
@@ -47,44 +52,63 @@ struct AddMealView: View {
         })
         .toolbarBackground(Color.appBackground, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
-        // 🆕 Present image picker
-                .sheet(isPresented: $showImagePicker) {
-                    ImagePicker(selectedImage: $store.selectedImage, sourceType: imageSource)
+        .sheet(isPresented: $showImagePicker) {
+            ImagePicker(selectedImage: $store.selectedImage, sourceType: imageSource)
+        }
+        .confirmationDialog("Select Image Source", isPresented: $showSourceActionSheet) {
+            if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                Button("Camera") {
+                    imageSource = .camera
+                    showImagePicker = true
                 }
-                // 🆕 Show source selection action sheet
-                .confirmationDialog("Select Image Source", isPresented: $showSourceActionSheet) {
-                    if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                        Button("Camera") {
-                            imageSource = .camera
-                            showImagePicker = true
-                        }
-                    }
-                    Button("Photo Library") {
-                        imageSource = .photoLibrary
-                        showImagePicker = true
-                    }
-                    Button("Cancel", role: .cancel) {}
-                }
+            }
+            Button("Photo Library") {
+                imageSource = .photoLibrary
+                showImagePicker = true
+            }
+            Button("Cancel", role: .cancel) {}
+        }
     }
     
+    // MARK: - Capture Controls
     private var captureControls: some View {
         HStack(spacing: 16) {
             captureButton(title: "Camera", systemImage: "camera.fill") {
                 store.lightImpact()
-//                store.selectedImage = UIImage(systemName: "camera.macro")
                 imageSource = .camera
                 showImagePicker = true
             }
             captureButton(title: "Photos", systemImage: "photo.on.rectangle") {
                 store.lightImpact()
-//                store.selectedImage = UIImage(systemName: "photo.stack")
                 imageSource = .photoLibrary
                 showImagePicker = true
             }
         }
         .accessibilityElement(children: .contain)
     }
+
+    // MARK: - 🆕 Barcode Scanner Section
+    private var scanBarcodeSection: some View {
+        NavigationLink(destination: ScanProductView()) {
+            HStack {
+                Image(systemName: "barcode.viewfinder")
+                    .font(.title2)
+                    .foregroundColor(.white)
+                Text("Scan Product Barcode")
+                    .font(.headline)
+                    .foregroundColor(.white)
+            }
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(Color.green.opacity(0.8), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .shadow(color: Color.black.opacity(0.3), radius: 10, x: 0, y: 8)
+        }
+        .padding(.top, 10)
+        .accessibilityLabel("Scan barcode")
+        .accessibilityHint("Scan a product barcode to fetch nutrition info")
+    }
     
+    // MARK: - Capture Button
     private func captureButton(title: String, systemImage: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: 12) {
@@ -98,7 +122,9 @@ struct AddMealView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
-            .background(LinearGradient(colors: [.appSurface, .appSurfaceElevated], startPoint: .topLeading, endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .background(LinearGradient(colors: [.appSurface, .appSurfaceElevated],
+                                       startPoint: .topLeading, endPoint: .bottomTrailing),
+                        in: RoundedRectangle(cornerRadius: 22, style: .continuous))
             .shadow(color: Color.black.opacity(0.35), radius: 14, x: 0, y: 10)
         }
         .buttonStyle(.plain)
@@ -106,6 +132,7 @@ struct AddMealView: View {
         .accessibilityHint("Select \(title.lowercased()) source")
     }
     
+    // MARK: - Image Preview
     private var imagePreview: some View {
         Card {
             VStack(alignment: .leading, spacing: 16) {
@@ -144,6 +171,7 @@ struct AddMealView: View {
         }
     }
     
+    // MARK: - Detected Items Section
     private var detectedItemsSection: some View {
         Group {
             if store.detectedItems.isEmpty {
@@ -171,6 +199,7 @@ struct AddMealView: View {
         }
     }
     
+    // MARK: - Detected Row
     private func detectedRow(for item: FoodItem) -> some View {
         let gramsBinding = Binding<Double>(
             get: { item.grams },
@@ -223,3 +252,4 @@ struct AddMealView: View {
             .preferredColorScheme(.dark)
     }
 }
+
