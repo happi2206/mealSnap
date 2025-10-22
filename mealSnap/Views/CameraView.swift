@@ -64,7 +64,7 @@ struct CameraView: View {
             }
             .navigationTitle("MealSnap Scanner")
             .sheet(isPresented: $showPicker) {
-                ImagePicker(selectedImage: $viewModel.selectedImage, sourceType: .camera) { image in
+                ImagePicker(selectedImage: $viewModel.selectedImage, sourceType: .photoLibrary) { image in
                     viewModel.handlePickedImage(image)
                 }
             }

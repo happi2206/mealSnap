@@ -83,6 +83,9 @@ struct AddMealView: View {
                 imageSource = .photoLibrary
                 showImagePicker = true
             }
+            NavigationLink(destination: CameraView()){
+                Text("Test")
+            }
         }
         .accessibilityElement(children: .contain)
     }
