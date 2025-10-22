@@ -96,9 +96,9 @@ struct AddMealView: View {
                 imageSource = .photoLibrary
                 showImagePicker = true
             }
-            NavigationLink(destination: CameraView()){
-                Text("Test")
-            }
+//            NavigationLink(destination: CameraView()){
+//                Text("Test")
+//            }
         }
     }
 
@@ -186,7 +186,15 @@ struct AddMealView: View {
     // MARK: - Detected Items Section
     private var detectedItemsSection: some View {
         Group {
-            if store.detectedItems.isEmpty {
+            if store.detectedItems != [] && store.selectedImage != nil {
+                VStack(alignment: .leading, spacing: 14) {
+                    Text("Detected items")
+                        .font(.title2.weight(.semibold))
+                    ForEach(store.detectedItems) { item in
+                        detectedRow(for: item)
+                    }
+                }
+            } else {
                 Card {
                     VStack(alignment: .leading, spacing: 12) {
                         Image(systemName: "rectangle.and.text.magnifyingglass")
@@ -197,14 +205,6 @@ struct AddMealView: View {
                         Text("Snap a meal or choose a photo to see detected items.")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
-                    }
-                }
-            } else {
-                VStack(alignment: .leading, spacing: 14) {
-                    Text("Detected items")
-                        .font(.title2.weight(.semibold))
-                    ForEach(store.detectedItems) { item in
-                        detectedRow(for: item)
                     }
                 }
             }

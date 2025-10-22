@@ -34,14 +34,14 @@ final class MealStore: ObservableObject {
 
     // MARK: - Init
     init(
-        meals: [MealEntry] = MealEntry.mockMeals,
-//        meals: [ MealEntry ] = [],
+//        meals: [MealEntry] = MealEntry.mockMeals,
+        meals: [ MealEntry ] = [],
         dailyGoal: Double = 2200,
         selectedUnits: Units = .metric,
         savePhotosLocally: Bool = true,
         syncHealthLater: Bool = false,
-        detectedItems: [FoodItem] = MealStore.sampleDetections
-//        detectedItems: [FoodItem] = []
+//        detectedItems: [FoodItem] = MealStore.sampleDetections
+        detectedItems: [FoodItem] = []
     ) {
         self.meals = meals
         self.dailyGoal = dailyGoal
