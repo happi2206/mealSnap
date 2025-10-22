@@ -2,25 +2,25 @@
 //  ImagePicker.swift
 //  MealSnap
 //
-//  Created by Rujeet Prajapati on 20/10/2025.
+//  Created by Farhan Khan on 20/10/2025.
 //
 
 import SwiftUI
 import UIKit
-import PhotosUI
 
-/// ImagePicker supports selecting or capturing an image for further processing,
-/// such as ML object detection or calorie estimation.
+/// A SwiftUI wrapper for UIImagePickerController that supports camera and photo library.
+/// It automatically normalizes image orientation and triggers an optional callback when an image is selected.
 struct ImagePicker: UIViewControllerRepresentable {
+    // MARK: - Properties
     @Binding var selectedImage: UIImage?
     var sourceType: UIImagePickerController.SourceType = .photoLibrary
     
-    /// Optional callback triggered after an image is picked
+    /// Optional callback for post-selection processing (e.g. ML prediction)
     var onImagePicked: ((UIImage) -> Void)? = nil
     
     @Environment(\.presentationMode) private var presentationMode
     
-    // MARK: - Make UIViewController
+    // MARK: - Create Picker
     func makeUIViewController(context: Context) -> UIImagePickerController {
         let picker = UIImagePickerController()
         picker.delegate = context.coordinator
@@ -30,8 +30,10 @@ struct ImagePicker: UIViewControllerRepresentable {
         return picker
     }
 
-    // MARK: - Update UIViewController
-    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+    // MARK: - Update
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {
+        // No dynamic updates required
+    }
 
     // MARK: - Coordinator
     func makeCoordinator() -> Coordinator {
@@ -53,11 +55,11 @@ struct ImagePicker: UIViewControllerRepresentable {
 
             guard let image = info[.originalImage] as? UIImage else { return }
             
-            // ✅ Normalize image orientation
+            // Normalize orientation (important for camera images)
             let fixedImage = image.fixedOrientation()
             parent.selectedImage = fixedImage
             
-            // ✅ Trigger callback for ML processing if provided
+            // Trigger callback for ML/detection if provided
             parent.onImagePicked?(fixedImage)
         }
 
@@ -67,16 +69,16 @@ struct ImagePicker: UIViewControllerRepresentable {
     }
 }
 
-// MARK: - UIImage Orientation Fix Extension
+// MARK: - UIImage Orientation Fix
 extension UIImage {
-    /// Returns a new image with orientation normalized (prevents rotated display in SwiftUI)
+    /// Fixes orientation issues from the camera (e.g. rotated images)
     func fixedOrientation() -> UIImage {
         if imageOrientation == .up { return self }
         UIGraphicsBeginImageContextWithOptions(size, false, scale)
         draw(in: CGRect(origin: .zero, size: size))
-        let normalized = UIGraphicsGetImageFromCurrentImageContext()
+        let normalizedImage = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
-        return normalized ?? self
+        return normalizedImage ?? self
     }
 }
 

@@ -1,13 +1,5 @@
 //
 //  VisionManager.swift
-//  mealSnap
-//
-//  Created by Maher Parkar on 21/10/2025.
-//
-
-
-//
-//  VisionManager.swift
 //  MealSnap
 //
 //  Handles both food classification and packaged product detection using CoreML and Vision.
@@ -19,13 +11,30 @@ import CoreML
 
 @MainActor
 final class VisionManager: ObservableObject {
-    private let foodModel = try! VNCoreMLModel(for: FoodClassifier().model)
-    private let productModel = try! VNCoreMLModel(for: FoodClassifier().model)
+    private let foodModel: VNCoreMLModel
+    private let productModel: VNCoreMLModel
+
+    init() {
+        // Use CPU-only configuration to avoid “espresso context” crash
+        let config = MLModelConfiguration()
+        config.computeUnits = .cpuOnly
+
+        do {
+            let foodClassifier = try food_classifier(configuration: config)
+            foodModel = try VNCoreMLModel(for: foodClassifier.model)
+
+            // If you use a different product model, load that instead.
+            // For now, same model for demonstration:
+            let productClassifier = try food_classifier(configuration: config)
+            productModel = try VNCoreMLModel(for: productClassifier.model)
+        } catch {
+            fatalError("❌ Failed to initialize CoreML models: \(error)")
+        }
+    }
 
     func analyze(image: UIImage) async -> [FoodItem] {
         guard let ciImage = CIImage(image: image) else { return [] }
 
-        // Create a handler for the Vision requests
         let handler = VNImageRequestHandler(ciImage: ciImage, options: [:])
 
         // 1️⃣ Try detecting packaged products first
@@ -47,7 +56,7 @@ final class VisionManager: ObservableObject {
             }
         }
 
-        // 2️⃣ Fall back to food classification if no products are found
+        // 2️⃣ Fall back to food classification
         let foodReq = VNCoreMLRequest(model: foodModel)
         try? handler.perform([foodReq])
 

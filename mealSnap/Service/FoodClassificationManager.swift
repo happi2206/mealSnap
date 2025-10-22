@@ -23,11 +23,19 @@ final class FoodClassificationManager {
 
     init() {
         do {
-            self.model = try VNCoreMLModel(for: FoodClassifier().model)
+            // ✅ Use CPU-only to avoid espresso context errors
+            let config = MLModelConfiguration()
+            config.computeUnits = .cpuOnly
+
+            let foodModel = try food_classifier(configuration: config)
+            self.model = try VNCoreMLModel(for: foodModel.model)
+
+            print("✅ Food model loaded successfully (CPU mode).")
         } catch {
-            fatalError("Failed to load Food101.mlmodel: \(error)")
+            fatalError("❌ Failed to load Food101.mlmodel: \(error.localizedDescription)")
         }
     }
+
 
     func classify(image: UIImage, completion: @escaping (FoodItem?) -> Void) {
         guard let ciImage = CIImage(image: image) else {
