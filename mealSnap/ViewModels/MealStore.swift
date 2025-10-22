@@ -216,11 +216,25 @@ extension MealStore {
 
     /// Detect food items using the MobileNetV2-based FoodClassifier model
 //    func detectFoodItems(from image: UIImage) {
-//        guard let visionModel = visionModel else {
-//            self.errorMessage = "Model not available."
+//        // 1️⃣ Prepare ML configuration
+//        let config = MLModelConfiguration()
+//        config.computeUnits = .cpuOnly // ✅ Ensures it works on the simulator (prevents espresso errors)
+//
+//        // 2️⃣ Load model safely with CPU fallback
+//        guard let coreMLModel = try? food_classifier(configuration: config).model else {
+//            self.errorMessage = "Failed to load FoodClassifier model."
+//            print("❌ Could not load FoodClassifier.mlmodel.")
+//            return
+//        }
+//
+//        // 3️⃣ Wrap it for Vision
+//        guard let visionModel = try? VNCoreMLModel(for: coreMLModel) else {
+//            self.errorMessage = "Model not available for Vision."
 //            print("❌ Model not available for Vision.")
 //            return
 //        }
+//
+//        // 4️⃣ Validate CIImage
 //        guard let ciImage = CIImage(image: image) else {
 //            self.errorMessage = "Invalid image."
 //            print("❌ Could not create CIImage.")
@@ -229,6 +243,7 @@ extension MealStore {
 //
 //        print("✅ CIImage created for detection. Size: \(ciImage.extent.size)")
 //
+//        // 5️⃣ Create Vision request
 //        let request = VNCoreMLRequest(model: visionModel) { [weak self] request, error in
 //            guard let self = self else { return }
 //
@@ -262,7 +277,7 @@ extension MealStore {
 //                return
 //            }
 //
-//            // Map results to FoodItem list with estimated macros
+//            // 6️⃣ Map to FoodItem list with estimated macros
 //            let mappedItems = topResults.map { obs in
 //                FoodItem(
 //                    name: obs.identifier.capitalized,
@@ -286,6 +301,7 @@ extension MealStore {
 //
 //        request.imageCropAndScaleOption = .scaleFit
 //
+//        // 7️⃣ Run Vision request
 //        DispatchQueue.global(qos: .userInitiated).async {
 //            let handler = VNImageRequestHandler(ciImage: ciImage, orientation: .up)
 //            do {
@@ -299,6 +315,7 @@ extension MealStore {
 //            }
 //        }
 //    }
+
     func detectFoodItems(from image: UIImage) {
         // 🔸 Static detection — always returns Pizza 🍕
         print("✅ Static detection mode active: Pizza")
