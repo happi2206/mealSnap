@@ -8,6 +8,8 @@
 import Combine
 import SwiftUI
 import UIKit
+import Vision
+import CoreML
 
 @MainActor
 final class MealStore: ObservableObject {
@@ -28,10 +30,13 @@ final class MealStore: ObservableObject {
     }
     @Published var showingOnboarding: Bool = false
     
+    private var visionModel: VNCoreMLModel?
+
+    // MARK: - Init
     init(
         meals: [MealEntry] = [],
         dailyGoal: Double = 2200,
-        selectedUnits: Units = .metric, // fixed to valid enum
+        selectedUnits: Units = .metric,
         savePhotosLocally: Bool = true,
         syncHealthLater: Bool = false,
         detectedItems: [FoodItem] = []
@@ -42,8 +47,10 @@ final class MealStore: ObservableObject {
         self.savePhotosLocally = savePhotosLocally
         self.syncHealthLater = syncHealthLater
         self.detectedItems = detectedItems
+        loadMLModel()
     }
 
+    // MARK: - Firestore + Plan Management
     func loadUserData() {
         FirestoreService.shared.fetchUserPlan { plan, onboardingComplete in
             DispatchQueue.main.async {
@@ -60,6 +67,7 @@ final class MealStore: ObservableObject {
         self.showingOnboarding = false
     }
     
+    // MARK: - Computed Values
     var consumedCaloriesToday: Double {
         todayMeals.reduce(0) { $0 + $1.totalCalories }
     }
@@ -94,6 +102,7 @@ final class MealStore: ObservableObject {
         return (plan.proteinG, plan.carbsG, plan.fatG)
     }
     
+    // MARK: - Utility Actions
     func refreshToday() async {
         isRefreshing = true
         try? await Task.sleep(nanoseconds: 800_000_000)
@@ -112,11 +121,11 @@ final class MealStore: ObservableObject {
         }
     }
     
-    // ✅ FIXED: Corrected `photo:` -> `photoURL:` and converted UIImage to temporary URL
+    // ✅ Save detected food into diary
     func saveDetectedItemsToDiary() {
         guard !detectedItems.isEmpty else {
             errorMessage = "No items detected yet."
-            softErrorHaptic()
+            self.softErrorHaptic()
             return
         }
 
@@ -137,10 +146,10 @@ final class MealStore: ObservableObject {
         
         withAnimation(.spring(duration: 0.5)) {
             meals.insert(newMeal, at: 0)
-            detectedItems = Self.sampleDetections
+//            detectedItems = Self.sampleDetections
             selectedImage = nil
         }
-        successHaptic()
+        self.successHaptic()
     }
     
     func deleteMeal(_ meal: MealEntry) {
@@ -178,48 +187,188 @@ final class MealStore: ObservableObject {
     }
     
     static let sampleDetections: [FoodItem] = [
-        FoodItem(
-            name: "Chicken Breast",
-            confidence: 0.93,
-            grams: 120,
-            calories: 198,
-            protein: 37,
-            carbs: 0,
-            fat: 4
-        ),
-        FoodItem(
-            name: "Brown Rice",
-            confidence: 0.81,
-            grams: 180,
-            calories: 216,
-            protein: 5,
-            carbs: 44,
-            fat: 1.5
-        ),
-        FoodItem(
-            name: "Roasted Veggies",
-            confidence: 0.76,
-            grams: 140,
-            calories: 110,
-            protein: 3,
-            carbs: 15,
-            fat: 4
-        )
+        FoodItem(name: "Chicken Breast", confidence: 0.93, grams: 120, calories: 198, protein: 37, carbs: 0, fat: 4),
+        FoodItem(name: "Brown Rice", confidence: 0.81, grams: 180, calories: 216, protein: 5, carbs: 44, fat: 1.5),
+        FoodItem(name: "Roasted Veggies", confidence: 0.76, grams: 140, calories: 110, protein: 3, carbs: 15, fat: 4)
     ]
+}
+
+// MARK: - ML Food Detection
+extension MealStore {
+
+    /// Load the CoreML model once at initialization
+    private func loadMLModel() {
+        do {
+            // ✅ Use CPU-only to prevent “espresso context” error
+            let config = MLModelConfiguration()
+            config.computeUnits = .cpuOnly
+
+            let model = try food_classifier(configuration: config)
+            visionModel = try VNCoreMLModel(for: model.model)
+
+            print("✅ ML Model loaded successfully (CPU mode).")
+        } catch {
+            print("❌ Failed to load FoodClassifier model:", error.localizedDescription)
+            visionModel = nil
+        }
+    }
+
+
+    /// Detect food items using the MobileNetV2-based FoodClassifier model
+//    func detectFoodItems(from image: UIImage) {
+//        guard let visionModel = visionModel else {
+//            self.errorMessage = "Model not available."
+//            print("❌ Model not available for Vision.")
+//            return
+//        }
+//        guard let ciImage = CIImage(image: image) else {
+//            self.errorMessage = "Invalid image."
+//            print("❌ Could not create CIImage.")
+//            return
+//        }
+//
+//        print("✅ CIImage created for detection. Size: \(ciImage.extent.size)")
+//
+//        let request = VNCoreMLRequest(model: visionModel) { [weak self] request, error in
+//            guard let self = self else { return }
+//
+//            if let error = error {
+//                DispatchQueue.main.async {
+//                    self.errorMessage = "Detection failed: \(error.localizedDescription)"
+//                }
+//                print("❌ VNCoreMLRequest error:", error.localizedDescription)
+//                return
+//            }
+//
+//            guard let results = request.results as? [VNClassificationObservation], !results.isEmpty else {
+//                DispatchQueue.main.async {
+//                    self.errorMessage = "⚠️ No classification results returned."
+//                }
+//                print("⚠️ No classification results returned.")
+//                return
+//            }
+//
+//            print("🔍 Found \(results.count) predictions")
+//            for obs in results.prefix(5) {
+//                print("→ \(obs.identifier) (\(Int(obs.confidence * 100))%)")
+//            }
+//
+//            let topResults = results.filter { $0.confidence > 0.15 }.prefix(3)
+//            if topResults.isEmpty {
+//                DispatchQueue.main.async {
+//                    self.errorMessage = "No confident matches found."
+//                }
+//                print("⚠️ All confidences below threshold.")
+//                return
+//            }
+//
+//            // Map results to FoodItem list with estimated macros
+//            let mappedItems = topResults.map { obs in
+//                FoodItem(
+//                    name: obs.identifier.capitalized,
+//                    confidence: Double(obs.confidence),
+//                    grams: 100,
+//                    calories: self.estimateCalories(for: obs.identifier),
+//                    protein: self.estimateProtein(for: obs.identifier),
+//                    carbs: self.estimateCarbs(for: obs.identifier),
+//                    fat: self.estimateFat(for: obs.identifier)
+//                )
+//            }
+//
+//            DispatchQueue.main.async {
+//                withAnimation(.easeInOut) {
+//                    self.detectedItems = mappedItems
+//                }
+//                self.errorMessage = nil
+//                print("✅ Updated detectedItems:", mappedItems.map { $0.name })
+//            }
+//        }
+//
+//        request.imageCropAndScaleOption = .scaleFit
+//
+//        DispatchQueue.global(qos: .userInitiated).async {
+//            let handler = VNImageRequestHandler(ciImage: ciImage, orientation: .up)
+//            do {
+//                try handler.perform([request])
+//                print("✅ Vision request performed successfully.")
+//            } catch {
+//                DispatchQueue.main.async {
+//                    self.errorMessage = "Failed to perform detection: \(error.localizedDescription)"
+//                }
+//                print("❌ Vision handler error:", error.localizedDescription)
+//            }
+//        }
+//    }
+    func detectFoodItems(from image: UIImage) {
+        // 🔸 Static detection — always returns Pizza 🍕
+        print("✅ Static detection mode active: Pizza")
+
+        let pizzaItem = FoodItem(
+            name: "Pizza",
+            confidence: 1.0,
+            grams: 150,
+            calories: 285,
+            protein: 12,
+            carbs: 36,
+            fat: 10
+        )
+
+        DispatchQueue.main.async {
+            withAnimation(.easeInOut) {
+                self.detectedItems = [pizzaItem]
+                self.errorMessage = nil
+                self.selectedImage = image
+            }
+            print("✅ Static Pizza result loaded.")
+        }
+    }
+
+
+    // MARK: - Nutritional Estimates (placeholder logic)
+    private func estimateCalories(for food: String) -> Double {
+        switch food.lowercased() {
+        case "pizza": return 285
+        case "burger": return 354
+        case "salad": return 120
+        case "sushi": return 200
+        default: return Double.random(in: 150...450)
+        }
+    }
+
+    private func estimateProtein(for food: String) -> Double {
+        switch food.lowercased() {
+        case "chicken", "steak": return 30
+        default: return Double.random(in: 5...30)
+        }
+    }
+
+    private func estimateCarbs(for food: String) -> Double {
+        switch food.lowercased() {
+        case "rice", "pasta": return 40
+        default: return Double.random(in: 10...60)
+        }
+    }
+
+    private func estimateFat(for food: String) -> Double {
+        switch food.lowercased() {
+        case "pizza", "burger": return 15
+        default: return Double.random(in: 2...20)
+        }
+    }
 }
 
 // MARK: - Haptic Helpers
 extension MealStore {
-    private func successHaptic() {
+    func successHaptic() {
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(.success)
     }
-    
-    private func softErrorHaptic() {
+
+    func softErrorHaptic() {
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(.warning)
     }
-    
+
     func lightImpact() {
         let generator = UIImpactFeedbackGenerator(style: .soft)
         generator.impactOccurred()

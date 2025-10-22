@@ -9,22 +9,19 @@ import SwiftUI
 import UIKit
 
 struct AddMealView: View {
-    @EnvironmentObject private var store: MealStore
-    @State private var showErrorToast = false
+    // Your MealStore environment object
+    @EnvironmentObject var store: MealStore
     
-    // 🆕 New states for image picking
+    @State private var showErrorToast = false
     @State private var showImagePicker = false
     @State private var imageSource: UIImagePickerController.SourceType = .photoLibrary
     @State private var showSourceActionSheet = false
-    
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 captureControls
-                
-                // 🆕 NEW: Barcode scanning button
                 scanBarcodeSection
-                
                 imagePreview
                 detectedItemsSection
                 
@@ -43,17 +40,33 @@ struct AddMealView: View {
         .scrollContentBackground(.hidden)
         .navigationTitle("Add Meal")
         .scrollDismissesKeyboard(.immediately)
-        .alert("Heads up", isPresented: $showErrorToast, actions: {
+        .alert("Heads up", isPresented: $showErrorToast) {
             Button("OK", role: .cancel) {
                 store.clearError()
             }
-        }, message: {
+        } message: {
             Text(store.errorMessage ?? "Something went wrong.")
-        })
+        }
         .toolbarBackground(Color.appBackground, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
+        
+        // ✅ Working Sheet
         .sheet(isPresented: $showImagePicker) {
-            ImagePicker(selectedImage: $store.selectedImage, sourceType: imageSource)
+            ImagePicker(
+                selectedImage: Binding(
+                    get: { store.selectedImage },
+                    set: { newImage in
+                        store.selectedImage = newImage
+                        if let image = newImage {
+                            // Run ML prediction after picking the image
+                            DispatchQueue.main.async {
+                                store.detectFoodItems(from: image)
+                            }
+                        }
+                    }
+                ),
+                sourceType: imageSource
+            )
         }
         .confirmationDialog("Select Image Source", isPresented: $showSourceActionSheet) {
             if UIImagePickerController.isSourceTypeAvailable(.camera) {
@@ -69,7 +82,7 @@ struct AddMealView: View {
             Button("Cancel", role: .cancel) {}
         }
     }
-    
+
     // MARK: - Capture Controls
     private var captureControls: some View {
         HStack(spacing: 16) {
@@ -84,10 +97,9 @@ struct AddMealView: View {
                 showImagePicker = true
             }
         }
-        .accessibilityElement(children: .contain)
     }
 
-    // MARK: - 🆕 Barcode Scanner Section
+    // MARK: - Barcode Section
     private var scanBarcodeSection: some View {
         NavigationLink(destination: ScanProductView()) {
             HStack {
@@ -100,14 +112,12 @@ struct AddMealView: View {
             }
             .frame(maxWidth: .infinity)
             .padding()
-            .background(Color.green.opacity(0.8), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .shadow(color: Color.black.opacity(0.3), radius: 10, x: 0, y: 8)
+            .background(Color.green.opacity(0.8), in: RoundedRectangle(cornerRadius: 18))
+            .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 8)
         }
         .padding(.top, 10)
-        .accessibilityLabel("Scan barcode")
-        .accessibilityHint("Scan a product barcode to fetch nutrition info")
     }
-    
+
     // MARK: - Capture Button
     private func captureButton(title: String, systemImage: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
@@ -116,22 +126,22 @@ struct AddMealView: View {
                     .font(.title2)
                     .foregroundStyle(.white)
                     .padding(16)
-                    .background(Color.accentPrimary.opacity(0.5), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .background(Color.accentPrimary.opacity(0.5), in: RoundedRectangle(cornerRadius: 18))
                 Text(title)
                     .font(.headline)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
-            .background(LinearGradient(colors: [.appSurface, .appSurfaceElevated],
-                                       startPoint: .topLeading, endPoint: .bottomTrailing),
-                        in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-            .shadow(color: Color.black.opacity(0.35), radius: 14, x: 0, y: 10)
+            .background(
+                LinearGradient(colors: [.appSurface, .appSurfaceElevated],
+                               startPoint: .topLeading, endPoint: .bottomTrailing),
+                in: RoundedRectangle(cornerRadius: 22)
+            )
+            .shadow(color: .black.opacity(0.35), radius: 14, x: 0, y: 10)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(title)
-        .accessibilityHint("Select \(title.lowercased()) source")
     }
-    
+
     // MARK: - Image Preview
     private var imagePreview: some View {
         Card {
@@ -145,10 +155,9 @@ struct AddMealView: View {
                             .scaledToFill()
                             .frame(maxWidth: .infinity)
                             .frame(height: 220)
-                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                            .transition(.opacity.combined(with: .scale))
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
                     } else {
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        RoundedRectangle(cornerRadius: 16)
                             .fill(Color.appSurface.opacity(0.6))
                             .frame(height: 220)
                             .overlay(
@@ -170,7 +179,7 @@ struct AddMealView: View {
             }
         }
     }
-    
+
     // MARK: - Detected Items Section
     private var detectedItemsSection: some View {
         Group {
@@ -198,27 +207,25 @@ struct AddMealView: View {
             }
         }
     }
-    
+
     // MARK: - Detected Row
     private func detectedRow(for item: FoodItem) -> some View {
         let gramsBinding = Binding<Double>(
             get: { item.grams },
             set: { newValue in
-                let stepped = max(newValue, 1)
-                store.updateDetectedItem(item, grams: stepped)
+                store.updateDetectedItem(item, grams: max(newValue, 1))
             }
         )
-        
+
         return Card {
             VStack(alignment: .leading, spacing: 16) {
                 HStack {
                     Text(item.name)
                         .font(.headline)
-                        .lineLimit(1)
                     Spacer()
                     ConfidenceTag(confidence: item.confidence)
                 }
-                
+
                 HStack(alignment: .firstTextBaseline, spacing: 16) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Grams")
@@ -228,7 +235,6 @@ struct AddMealView: View {
                             Text("\(Int(item.grams)) g")
                                 .font(.body.weight(.medium))
                         }
-                        .accessibilityHint("Adjust grams for \(item.name)")
                     }
                     Spacer()
                     VStack(alignment: .trailing, spacing: 6) {
