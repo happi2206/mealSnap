@@ -217,128 +217,100 @@ extension MealStore {
 
 
     /// Detect food items using the MobileNetV2-based FoodClassifier model
-//    func detectFoodItems(from image: UIImage) {
-//        // 1️⃣ Prepare ML configuration
-//        let config = MLModelConfiguration()
-//        config.computeUnits = .cpuOnly // ✅ Ensures it works on the simulator (prevents espresso errors)
-//
-//        // 2️⃣ Load model safely with CPU fallback
-//        guard let coreMLModel = try? food_classifier(configuration: config).model else {
-//            self.errorMessage = "Failed to load FoodClassifier model."
-//            print("❌ Could not load FoodClassifier.mlmodel.")
-//            return
-//        }
-//
-//        // 3️⃣ Wrap it for Vision
-//        guard let visionModel = try? VNCoreMLModel(for: coreMLModel) else {
-//            self.errorMessage = "Model not available for Vision."
-//            print("❌ Model not available for Vision.")
-//            return
-//        }
-//
-//        // 4️⃣ Validate CIImage
-//        guard let ciImage = CIImage(image: image) else {
-//            self.errorMessage = "Invalid image."
-//            print("❌ Could not create CIImage.")
-//            return
-//        }
-//
-//        print("✅ CIImage created for detection. Size: \(ciImage.extent.size)")
-//
-//        // 5️⃣ Create Vision request
-//        let request = VNCoreMLRequest(model: visionModel) { [weak self] request, error in
-//            guard let self = self else { return }
-//
-//            if let error = error {
-//                DispatchQueue.main.async {
-//                    self.errorMessage = "Detection failed: \(error.localizedDescription)"
-//                }
-//                print("❌ VNCoreMLRequest error:", error.localizedDescription)
-//                return
-//            }
-//
-//            guard let results = request.results as? [VNClassificationObservation], !results.isEmpty else {
-//                DispatchQueue.main.async {
-//                    self.errorMessage = "⚠️ No classification results returned."
-//                }
-//                print("⚠️ No classification results returned.")
-//                return
-//            }
-//
-//            print("🔍 Found \(results.count) predictions")
-//            for obs in results.prefix(5) {
-//                print("→ \(obs.identifier) (\(Int(obs.confidence * 100))%)")
-//            }
-//
-//            let topResults = results.filter { $0.confidence > 0.15 }.prefix(3)
-//            if topResults.isEmpty {
-//                DispatchQueue.main.async {
-//                    self.errorMessage = "No confident matches found."
-//                }
-//                print("⚠️ All confidences below threshold.")
-//                return
-//            }
-//
-//            // 6️⃣ Map to FoodItem list with estimated macros
-//            let mappedItems = topResults.map { obs in
-//                FoodItem(
-//                    name: obs.identifier.capitalized,
-//                    confidence: Double(obs.confidence),
-//                    grams: 100,
-//                    calories: self.estimateCalories(for: obs.identifier),
-//                    protein: self.estimateProtein(for: obs.identifier),
-//                    carbs: self.estimateCarbs(for: obs.identifier),
-//                    fat: self.estimateFat(for: obs.identifier)
-//                )
-//            }
-//
-//            DispatchQueue.main.async {
-//                withAnimation(.easeInOut) {
-//                    self.detectedItems = mappedItems
-//                }
-//                self.errorMessage = nil
-//                print("✅ Updated detectedItems:", mappedItems.map { $0.name })
-//            }
-//        }
-//
-//        request.imageCropAndScaleOption = .scaleFit
-//
-//        // 7️⃣ Run Vision request
-//        DispatchQueue.global(qos: .userInitiated).async {
-//            let handler = VNImageRequestHandler(ciImage: ciImage, orientation: .up)
-//            do {
-//                try handler.perform([request])
-//                print("✅ Vision request performed successfully.")
-//            } catch {
-//                DispatchQueue.main.async {
-//                    self.errorMessage = "Failed to perform detection: \(error.localizedDescription)"
-//                }
-//                print("❌ Vision handler error:", error.localizedDescription)
-//            }
-//        }
-//    }
-
     func detectFoodItems(from image: UIImage) {
-        // 🔸 Static detection — always returns Pizza 🍕
-        print("✅ Static detection mode active: Pizza")
+        guard let visionModel = visionModel else {
+            self.errorMessage = "⚠️ ML model not loaded."
+            print("❌ Model not loaded.")
+            return
+        }
 
-        let pizzaItem = FoodItem(
-            name: "Pizza",
-            confidence: 1.0,
-            grams: 150,
-            calories: 285,
-            protein: 12,
-            carbs: 36,
-            fat: 10
-        )
+        // 1️⃣ Resize image to 360×360 and prepare CIImage from it
+        guard let resized = image.resizedToMLInput(size: CGSize(width: 360, height: 360)),
+              let ciImage = CIImage(image: resized) else {
+            self.errorMessage = "❌ Failed to prepare image."
+            print("❌ Could not create CIImage from resized image.")
+            return
+        }
 
-        DispatchQueue.main.async {
-            withAnimation(.easeInOut) {
-                self.detectedItems = [pizzaItem]
-                self.errorMessage = nil
-                self.selectedImage = image
+        print("✅ Prepared CIImage size: \(ciImage.extent.size)")
+
+        // 2️⃣ Build Vision request
+        let request = VNCoreMLRequest(model: visionModel) { [weak self] request, error in
+            guard let self = self else { return }
+
+            if let error = error {
+                DispatchQueue.main.async {
+                    self.errorMessage = "Detection failed: \(error.localizedDescription)"
+                }
+                print("❌ VNCoreMLRequest error:", error.localizedDescription)
+                return
             }
-            print("✅ Static Pizza result loaded.")
+
+            guard let results = request.results as? [VNClassificationObservation], !results.isEmpty else {
+                DispatchQueue.main.async {
+                    self.errorMessage = "⚠️ No classification results."
+                }
+                print("⚠️ No classification results returned.")
+                return
+            }
+
+            // 🔍 Debug: Top 10 predictions
+            print("\n🔍 Top 10 predictions:")
+            for obs in results.prefix(10) {
+                print("→ \(obs.identifier) (\(Int(obs.confidence * 100))%)")
+            }
+
+            let best = results.first!
+            let confidence = best.confidence
+
+            // Warn for low confidence
+            if confidence < 0.10 {
+                DispatchQueue.main.async {
+                    self.errorMessage = "⚠️ Low confidence — may be inaccurate."
+                }
+            } else {
+                DispatchQueue.main.async {
+                    self.errorMessage = nil
+                }
+            }
+
+            // 3️⃣ Create top detected FoodItem
+            let topItem = FoodItem(
+                name: best.identifier.capitalized,
+                confidence: Double(confidence),
+                grams: 100,
+                calories: self.estimateCalories(for: best.identifier),
+                protein: self.estimateProtein(for: best.identifier),
+                carbs: self.estimateCarbs(for: best.identifier),
+                fat: self.estimateFat(for: best.identifier)
+            )
+
+            // 4️⃣ Update UI
+            DispatchQueue.main.async {
+                withAnimation(.easeInOut) {
+                    self.detectedItems = [topItem]
+                    self.selectedImage = resized // ✅ Show resized image, not original
+                }
+                print("✅ Updated detectedItems:", topItem.name)
+            }
+        }
+
+        // Match Create ML behavior
+        request.imageCropAndScaleOption = .centerCrop
+        request.usesCPUOnly = true
+
+        // 5️⃣ Perform Vision request on the resized CIImage (⚠️ not the original image)
+        DispatchQueue.global(qos: .userInitiated).async {
+            let handler = VNImageRequestHandler(ciImage: ciImage, options: [:])
+            do {
+                try handler.perform([request])
+                print("✅ Vision request performed successfully.")
+            } catch {
+                DispatchQueue.main.async {
+                    self.errorMessage = "Detection failed: \(error.localizedDescription)"
+                }
+                print("❌ Vision handler error:", error.localizedDescription)
+            }
         }
     }
 
@@ -393,6 +365,52 @@ extension MealStore {
         generator.impactOccurred()
     }
 }
+
+import UIKit
+import ImageIO
+
+// Helper 1: Resize image for model input (matches Create ML preprocessing)
+extension UIImage {
+    func resized(to size: CGSize = CGSize(width: 224, height: 224)) -> UIImage {
+        UIGraphicsBeginImageContextWithOptions(size, false, 1.0)
+        self.draw(in: CGRect(origin: .zero, size: size))
+        let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        return resizedImage ?? self
+    }
+}
+
+// Helper 2: Convert UIImage.Orientation → CGImagePropertyOrientation (for Vision)
+extension CGImagePropertyOrientation {
+    init(_ uiOrientation: UIImage.Orientation) {
+        switch uiOrientation {
+        case .up: self = .up
+        case .down: self = .down
+        case .left: self = .left
+        case .right: self = .right
+        case .upMirrored: self = .upMirrored
+        case .downMirrored: self = .downMirrored
+        case .leftMirrored: self = .leftMirrored
+        case .rightMirrored: self = .rightMirrored
+        @unknown default: self = .up
+        }
+    }
+}
+
+// 👇 Add this once anywhere in your project (outside the class)
+extension UIImage {
+    func resizedToMLInput(size: CGSize) -> UIImage? {
+        UIGraphicsBeginImageContextWithOptions(size, true, 1.0)
+        self.draw(in: CGRect(origin: .zero, size: size))
+        let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        return resizedImage
+    }
+}
+
+
+
+
 
 #Preview {
     let store = MealStore()
