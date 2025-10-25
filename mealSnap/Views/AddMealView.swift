@@ -16,6 +16,7 @@ struct AddMealView: View {
     @State private var showImagePicker = false
     @State private var imageSource: UIImagePickerController.SourceType = .photoLibrary
     @State private var showSourceActionSheet = false
+    @State private var pendingSource: UIImagePickerController.SourceType? = nil
 
     var body: some View {
         ScrollView {
@@ -69,17 +70,26 @@ struct AddMealView: View {
             )
         }
         .confirmationDialog("Select Image Source", isPresented: $showSourceActionSheet) {
-            if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                Button("Camera") {
-                    imageSource = .camera
-                    showImagePicker = true
+            if let preferred = pendingSource {
+                Button("Use Camera") {
+                    useSource(preferred)
+                }
+                Button("Use Photo Library") {
+                    useSource(.photoLibrary)
+                }
+            } else {
+                if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                    Button("Camera") {
+                        useSource(.camera)
+                    }
+                }
+                Button("Photo Library") {
+                    useSource(.photoLibrary)
                 }
             }
-            Button("Photo Library") {
-                imageSource = .photoLibrary
-                showImagePicker = true
+            Button("Cancel", role: .cancel) {
+                pendingSource = nil
             }
-            Button("Cancel", role: .cancel) {}
         }
     }
 
@@ -88,13 +98,17 @@ struct AddMealView: View {
         HStack(spacing: 16) {
             captureButton(title: "Camera", systemImage: "camera.fill") {
                 store.lightImpact()
-                imageSource = .camera
-                showImagePicker = true
+                if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                    pendingSource = .camera
+                    showSourceActionSheet = true
+                } else {
+                    useSource(.photoLibrary)
+                }
             }
             captureButton(title: "Photos", systemImage: "photo.on.rectangle") {
                 store.lightImpact()
-                imageSource = .photoLibrary
-                showImagePicker = true
+                pendingSource = nil
+                showSourceActionSheet = true
             }
         }
     }
@@ -140,6 +154,12 @@ struct AddMealView: View {
             .shadow(color: .black.opacity(0.35), radius: 14, x: 0, y: 10)
         }
         .buttonStyle(.plain)
+    }
+
+    private func useSource(_ source: UIImagePickerController.SourceType) {
+        pendingSource = nil
+        imageSource = source
+        showImagePicker = true
     }
 
     // MARK: - Image Preview
@@ -258,4 +278,3 @@ struct AddMealView: View {
             .preferredColorScheme(.dark)
     }
 }
-
