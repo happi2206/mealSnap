@@ -104,6 +104,7 @@ final class AuthViewModel: ObservableObject {
             try Auth.auth().signOut()
             self.user = nil
             resetFields()
+            WidgetBridge.clear()
             print("✅ User signed out successfully.")
         } catch {
             errorMessage = error.localizedDescription
@@ -118,4 +119,3 @@ final class AuthViewModel: ObservableObject {
         errorMessage = ""
     }
 }
-

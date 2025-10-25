@@ -11,7 +11,7 @@ struct ScanProductView: View {
     @State private var product: ProductInfo?
     @State private var errorMessage: String?
     @State private var isUploading = false
-    @State private var selectedImage: UIImage?        // ✅ Added this line
+    @State private var selectedImage: UIImage?     
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -113,7 +113,6 @@ struct ScanProductView: View {
         )
         
         Task {
-            // ✅ Use selected image or a placeholder
             let uploadImage = selectedImage ?? UIImage(systemName: "photo")!
             
             FirestoreService.shared.uploadScan(image: uploadImage, items: [foodItem]) { error in

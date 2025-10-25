@@ -11,7 +11,7 @@ import SwiftUI
 @main
 struct mealSnapWidgetBundle: WidgetBundle {
     var body: some Widget {
-        mealSnapWidget()
+        MealSnapWidget()
 //        mealSnapWidgetControl()
 //        mealSnapWidgetLiveActivity()
     }

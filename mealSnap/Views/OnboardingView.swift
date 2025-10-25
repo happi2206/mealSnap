@@ -45,11 +45,6 @@ struct OnboardingView: View {
                 case .review:
                     ReviewStep(
                         viewModel: viewModel,
-                        onNext: { push(.permissions) }
-                    )
-                case .permissions:
-                    PermissionsStep(
-                        viewModel: viewModel,
                         onNext: { push(.done) }
                     )
                 case .done:
@@ -605,47 +600,6 @@ private struct ReviewStep: View {
             Text(value)
                 .font(.headline)
         }
-    }
-}
-
-private struct PermissionsStep: View {
-    @ObservedObject var viewModel: OnboardingViewModel
-    var onNext: () -> Void
-    
-    var body: some View {
-        VStack(spacing: 24) {
-            ProgressHeader(
-                title: "Stay in sync",
-                subtitle: "MealSnap will soon connect with Apple Health to sync activity and nutrition.",
-                step: OnboardingStep.permissions.position,
-                total: OnboardingStep.totalSteps
-            )
-            
-            Card {
-                VStack(alignment: .leading, spacing: 18) {
-                    Image(systemName: "heart.circle.fill")
-                        .font(.system(size: 52))
-                        .foregroundStyle(Color.accentPrimary)
-                    Text("Health permissions coming soon")
-                        .font(.title3.weight(.semibold))
-                    Text("You’ll get a one-tap prompt when Health sync is ready. For now, MealSnap keeps everything private on-device.")
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            
-            Spacer()
-            
-            PrimaryButton(title: "Continue", systemImage: "arrow.right") {
-                onNext()
-            }
-        }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 32)
-        .background(Color.appBackground.ignoresSafeArea())
-        .navigationTitle("Health")
-        .toolbarBackground(Color.appBackground, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
     }
 }
 

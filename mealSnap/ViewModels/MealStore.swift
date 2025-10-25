@@ -58,13 +58,17 @@ final class MealStore: ObservableObject {
                 self.plan = plan
                 self.showingOnboarding = !onboardingComplete
                 self.dailyGoal = plan.map { Double($0.targetCalories) } ?? self.dailyGoal
+                self.syncWidgetData()
             }
         }
     }
     
     func getMeals(){
         FirestoreService.shared.fetchMeals { meals, error in
-            self.meals = meals ?? []
+            DispatchQueue.main.async {
+                self.meals = meals ?? []
+                self.syncWidgetData()
+            }
         }
     }
 
@@ -72,6 +76,7 @@ final class MealStore: ObservableObject {
         self.plan = plan
         FirestoreService.shared.saveUserPlan(plan)
         self.showingOnboarding = false
+        syncWidgetData()
     }
     
     // MARK: - Computed Values
@@ -107,6 +112,45 @@ final class MealStore: ObservableObject {
     var macroTargets: (protein: Int, carbs: Int, fat: Int)? {
         guard let plan else { return nil }
         return (plan.proteinG, plan.carbsG, plan.fatG)
+    }
+    
+    private func syncWidgetData() {
+        let targetCalories = plan.map { Double($0.targetCalories) } ?? dailyGoal
+        let macros = macroTotalsToday
+        let macroSnapshot = WidgetMacroSnapshot(
+            consumedProtein: macros.protein,
+            consumedCarbs: macros.carbs,
+            consumedFat: macros.fat,
+            goalProtein: plan.map { Double($0.proteinG) },
+            goalCarbs: plan.map { Double($0.carbsG) },
+            goalFat: plan.map { Double($0.fatG) }
+        )
+        
+        let latestMeal = todayMeals.first
+        let mealTitle: String? = {
+            guard let meal = latestMeal else { return nil }
+            let topItems = meal.items.prefix(2).map { $0.name }
+            if !topItems.isEmpty {
+                return topItems.joined(separator: ", ")
+            }
+            let formatter = DateFormatter()
+            formatter.timeStyle = .short
+            return "Meal at \(formatter.string(from: meal.date))"
+        }()
+        
+        let mealSnapshot: WidgetMealSnapshot? = {
+            guard let meal = latestMeal, let title = mealTitle else { return nil }
+            return WidgetMealSnapshot(title: title, calories: meal.totalCalories)
+        }()
+        
+        let payload = WidgetPayload(
+            consumedCalories: consumedCaloriesToday,
+            targetCalories: targetCalories,
+            macro: macroSnapshot,
+            lastMeal: mealSnapshot,
+            timestamp: Date()
+        )
+        WidgetBridge.update(with: payload)
     }
     
     // MARK: - Utility Actions
@@ -187,6 +231,7 @@ final class MealStore: ObservableObject {
         guard let mealIndex = meals.firstIndex(where: { $0.id == meal.id }) else { return }
         guard let itemIndex = meals[mealIndex].items.firstIndex(where: { $0.id == item.id }) else { return }
         meals[mealIndex].items[itemIndex] = meals[mealIndex].items[itemIndex].adjusted(grams: grams)
+        syncWidgetData()
     }
     
     func clearError() {
@@ -208,6 +253,7 @@ final class MealStore: ObservableObject {
         plan.fatG = macros.fat
         self.plan = plan
         PlanStorage.save(plan)
+        syncWidgetData()
     }
     
     static let sampleDetections: [FoodItem] = [
@@ -444,4 +490,3 @@ extension UIImage {
     .padding()
     .preferredColorScheme(.dark)
 }
-

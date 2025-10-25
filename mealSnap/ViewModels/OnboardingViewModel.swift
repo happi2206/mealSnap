@@ -15,7 +15,6 @@ enum OnboardingStep: Int, CaseIterable, Hashable, Identifiable {
     case goal
     case pace
     case review
-    case permissions
     case done
     
     var id: Int { rawValue }
@@ -28,7 +27,6 @@ enum OnboardingStep: Int, CaseIterable, Hashable, Identifiable {
         case .goal: return "Your Goal"
         case .pace: return "Preferred Pace"
         case .review: return "Review Plan"
-        case .permissions: return "Stay Synced"
         case .done: return "Ready to Snap"
         }
     }
@@ -165,7 +163,7 @@ final class OnboardingViewModel: ObservableObject {
             return true
         case .profile:
             return nameError == nil && ageError == nil && heightError == nil && weightError == nil
-        case .activity, .goal, .pace, .review, .permissions, .done:
+        case .activity, .goal, .pace, .review, .done:
             return true
         }
     }
