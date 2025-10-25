@@ -34,13 +34,11 @@ final class MealStore: ObservableObject {
 
     // MARK: - Init
     init(
-//        meals: [MealEntry] = MealEntry.mockMeals,
         meals: [ MealEntry ] = [],
         dailyGoal: Double = 2200,
         selectedUnits: Units = .metric,
         savePhotosLocally: Bool = true,
         syncHealthLater: Bool = false,
-//        detectedItems: [FoodItem] = MealStore.sampleDetections
         detectedItems: [FoodItem] = []
     ) {
         self.meals = meals
@@ -50,6 +48,7 @@ final class MealStore: ObservableObject {
         self.syncHealthLater = syncHealthLater
         self.detectedItems = detectedItems
         loadMLModel()
+        getMeals()
     }
 
     // MARK: - Firestore + Plan Management
@@ -60,6 +59,12 @@ final class MealStore: ObservableObject {
                 self.showingOnboarding = !onboardingComplete
                 self.dailyGoal = plan.map { Double($0.targetCalories) } ?? self.dailyGoal
             }
+        }
+    }
+    
+    func getMeals(){
+        FirestoreService.shared.fetchMeals { meals, error in
+            self.meals = meals ?? []
         }
     }
 
@@ -130,7 +135,7 @@ final class MealStore: ObservableObject {
             self.softErrorHaptic()
             return
         }
-
+        
         var photoPath: String? = nil
         if let image = selectedImage,
            let data = image.jpegData(compressionQuality: 0.8) {
@@ -146,19 +151,36 @@ final class MealStore: ObservableObject {
             items: detectedItems
         )
         
-        withAnimation(.spring(duration: 0.5)) {
-            meals.insert(newMeal, at: 0)
-//            detectedItems = Self.sampleDetections
+        FirestoreService.shared.saveMealEntry(newMeal)
             selectedImage = nil
-        }
+
+        
+//        if let image = selectedImage{
+//            FirestoreService.shared.uploadMealPhoto(image) { result in
+//                switch result {
+//                case .success(let photoURL):
+//                    let newMeal = MealEntry(
+//                        date: Date(),
+//                        photoURL: photoURL,
+//                        items: self.detectedItems
+//                    )
+//                    FirestoreService.shared.saveMealEntry(newMeal)
+//                case .failure(let error):
+//                    print("Error uploading photo: \(error.localizedDescription)")
+//                }
+//            }
+//        }
         self.successHaptic()
+        getMeals()
     }
     
     func deleteMeal(_ meal: MealEntry) {
-        guard let index = meals.firstIndex(where: { $0.id == meal.id }) else { return }
-        withAnimation(.easeInOut) {
-            meals.remove(at: index)
-        }
+//        guard let index = meals.firstIndex(where: { $0.id == meal.id }) else { return }
+//        withAnimation(.easeInOut) {
+//            meals.remove(at: index)
+//        }
+        FirestoreService.shared.deleteMealEntry(meal.id)
+        getMeals()
     }
     
     func updateItem(_ item: FoodItem, in meal: MealEntry, grams: Double) {

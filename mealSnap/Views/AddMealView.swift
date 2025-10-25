@@ -21,7 +21,7 @@ struct AddMealView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 captureControls
-                scanBarcodeSection
+//                scanBarcodeSection
                 imagePreview
                 detectedItemsSection
                 
@@ -96,9 +96,6 @@ struct AddMealView: View {
                 imageSource = .photoLibrary
                 showImagePicker = true
             }
-//            NavigationLink(destination: CameraView()){
-//                Text("Test")
-//            }
         }
     }
 

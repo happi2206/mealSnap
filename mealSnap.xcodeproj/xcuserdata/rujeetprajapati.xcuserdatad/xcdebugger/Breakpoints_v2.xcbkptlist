@@ -18,6 +18,50 @@
             endingLineNumber = "33"
             landmarkName = "handlePickedImage(_:)"
             landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "B4072577-3823-404A-9E5E-9A584B3B7BEF - 2bfd1f92476c4d92"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(1) suspend resume partial function for closure #1 () async -&gt; () in mealSnap.CameraViewModel.handlePickedImage(__C.UIImage) -&gt; ()"
+                  moduleName = "mealSnap.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/rujeetprajapati/UTS/40005%20Advanced%20ios%20Development/Assignment%204/mealSnap/mealSnap/ViewModels/CameraViewModel.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "33"
+                  endingLineNumber = "33">
+               </Location>
+               <Location
+                  uuid = "B4072577-3823-404A-9E5E-9A584B3B7BEF - eeb4f37adb54ed74"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(2) await resume partial function for closure #1 () async -&gt; () in mealSnap.CameraViewModel.handlePickedImage(__C.UIImage) -&gt; ()"
+                  moduleName = "mealSnap.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/rujeetprajapati/UTS/40005%20Advanced%20ios%20Development/Assignment%204/mealSnap/mealSnap/ViewModels/CameraViewModel.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "33"
+                  endingLineNumber = "33">
+               </Location>
+               <Location
+                  uuid = "B4072577-3823-404A-9E5E-9A584B3B7BEF - 726eea4118aa3988"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(3) suspend resume partial function for closure #1 () async -&gt; () in mealSnap.CameraViewModel.handlePickedImage(__C.UIImage) -&gt; ()"
+                  moduleName = "mealSnap.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/rujeetprajapati/UTS/40005%20Advanced%20ios%20Development/Assignment%204/mealSnap/mealSnap/ViewModels/CameraViewModel.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "33"
+                  endingLineNumber = "33">
+               </Location>
+            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -34,6 +78,50 @@
             endingLineNumber = "44"
             landmarkName = "analyzeAndUpload(_:)"
             landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "7543D493-643E-4E67-A72D-91E18D8D2FAC - 60ac7ea7949db42"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(1) suspend resume partial function for mealSnap.CameraViewModel.analyzeAndUpload(__C.UIImage) async -&gt; ()"
+                  moduleName = "mealSnap.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/rujeetprajapati/UTS/40005%20Advanced%20ios%20Development/Assignment%204/mealSnap/mealSnap/ViewModels/CameraViewModel.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "44"
+                  endingLineNumber = "44">
+               </Location>
+               <Location
+                  uuid = "7543D493-643E-4E67-A72D-91E18D8D2FAC - 2a26ee760bf88449"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(2) await resume partial function for mealSnap.CameraViewModel.analyzeAndUpload(__C.UIImage) async -&gt; ()"
+                  moduleName = "mealSnap.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/rujeetprajapati/UTS/40005%20Advanced%20ios%20Development/Assignment%204/mealSnap/mealSnap/ViewModels/CameraViewModel.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "44"
+                  endingLineNumber = "44">
+               </Location>
+               <Location
+                  uuid = "7543D493-643E-4E67-A72D-91E18D8D2FAC - d5f34d766c709f5c"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(3) suspend resume partial function for mealSnap.CameraViewModel.analyzeAndUpload(__C.UIImage) async -&gt; ()"
+                  moduleName = "mealSnap.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/rujeetprajapati/UTS/40005%20Advanced%20ios%20Development/Assignment%204/mealSnap/mealSnap/ViewModels/CameraViewModel.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "44"
+                  endingLineNumber = "44">
+               </Location>
+            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy

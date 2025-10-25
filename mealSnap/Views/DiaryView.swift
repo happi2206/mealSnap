@@ -29,7 +29,6 @@ struct DiaryView: View {
     var body: some View {
         ZStack {
             Color.appBackground.ignoresSafeArea()
-            
             List {
                 // ✅ Weekly Trend Chart
                 if !store.weeklyTrend.isEmpty {
@@ -74,6 +73,17 @@ struct DiaryView: View {
                     .accessibilityLabel("Share diary")
                 }
             }
+            .overlay{
+                if(groupedMeals.isEmpty){
+                    VStack(spacing: 8) {
+                        Image(systemName: "fork.knife")
+                            .font(.largeTitle)
+                            .foregroundStyle(.secondary)
+                        Text("No meals saved yet")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
             .navigationTitle("Diary")
             .toolbarBackground(Color.appBackground, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
@@ -88,12 +98,20 @@ struct DiaryView: View {
     
     /// Captures a screenshot of the diary view and triggers the iOS share sheet
     private func shareDiary() {
-        let renderer = ImageRenderer(content: snapshotBody)
-        if let uiImage = renderer.uiImage {
-            snapshotImage = uiImage
-            showingShareSheet = true
-        } else {
-            print("❌ Failed to generate snapshot image.")
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            let renderer = ImageRenderer(content: snapshotBody)
+            renderer.scale = UIScreen.main.scale
+            
+            if let uiImage = renderer.uiImage {
+                withAnimation {
+                    snapshotImage = uiImage
+                    showingShareSheet = true
+                }
+            } else {
+                print("❌ Failed to generate snapshot image.")
+            }
         }
     }
     
@@ -203,10 +221,10 @@ private struct MealRow: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            Image(systemName: "chevron.right")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.tertiary)
-                .accessibilityHidden(true)
+//            Image(systemName: "chevron.right")
+//                .font(.caption.weight(.semibold))
+//                .foregroundStyle(.tertiary)
+//                .accessibilityHidden(true)
         }
         .padding(.vertical, 6)
     }

@@ -51,4 +51,10 @@ struct PlanStorage {
         return UserDefaults(suiteName: "group.com.advancediOS.mealsnap")?
             .integer(forKey: "totalCalories") ?? 0
     }
+    
+    func saveTotalCalories(_ total: Int) {
+        if let defaults = UserDefaults(suiteName: "group.com.advancediOS.mealsnap") {
+            defaults.set(total, forKey: "totalCalories")
+        }
+    }
 }

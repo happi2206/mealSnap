@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import WidgetKit
 
 struct TodayView: View {
     @EnvironmentObject private var store: MealStore
@@ -61,6 +62,10 @@ struct TodayView: View {
         .scrollIndicators(.hidden)
         .refreshable {
             await store.refreshToday()
+        }
+        .onAppear{
+            PlanStorage().saveTotalCalories(Int(store.consumedCaloriesToday))
+            WidgetCenter.shared.reloadAllTimelines()
         }
         .toolbarBackground(Color.appBackground, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)

@@ -190,5 +190,100 @@ final class FirestoreService {
             }
         }
     }
+    
+    func fetchMeals(completion: @escaping ([MealEntry]?, Error?) -> Void) {
+        guard let userID = Auth.auth().currentUser?.uid else {
+            completion(nil, NSError(domain: "Auth", code: 401,
+                                    userInfo: [NSLocalizedDescriptionKey: "User not logged in"]))
+            return
+        }
+        
+        db.collection("users")
+            .document(userID)
+            .collection("meals")
+            .getDocuments{ snapshot, error in
+                if let error = error {
+                    print("❌ Error fetching meals: \(error.localizedDescription)")
+                    completion(nil,error)
+                    return
+                }
+                
+                var meals: [MealEntry] = []
+                
+                snapshot?.documents.forEach { doc in
+                    do {
+                        let meal = try doc.data(as: MealEntry.self)
+                        meals.append(meal)
+                    } catch {
+                        print("⚠️ Could not decode meal: \(error)")
+                    }
+                }
+                
+                completion(meals,nil)
+            }
+    }
+    
+    
+    func deleteMealEntry(_ mealID: UUID, completion: ((Error?) -> Void)? = nil) {
+        guard let userID = Auth.auth().currentUser?.uid else {
+            completion?(NSError(domain: "Auth", code: 401,
+                                userInfo: [NSLocalizedDescriptionKey: "User not logged in"]))
+            return
+        }
+        
+        db.collection("users")
+            .document(userID)
+            .collection("meals")
+            .document(mealID.uuidString)
+            .delete { error in
+                if let error = error {
+                    print("❌ Error deleting meal: \(error.localizedDescription)")
+                } else {
+                    print("🗑️ Meal deleted successfully for user: \(userID)")
+                }
+                completion?(error)
+            }
+    }
+    
+    func uploadMealPhoto(_ image: UIImage, completion: @escaping (Result<String, Error>) -> Void) {
+        guard let userID = Auth.auth().currentUser?.uid else {
+            completion(.failure(NSError(domain: "Auth", code: 401,
+                                        userInfo: [NSLocalizedDescriptionKey: "User not logged in"])))
+            return
+        }
+        
+        guard let imageData = image.jpegData(compressionQuality: 0.8) else {
+            completion(.failure(NSError(domain: "Image", code: 400,
+                                        userInfo: [NSLocalizedDescriptionKey: "Invalid image data"])))
+            return
+        }
+
+        // Create a unique file name for each meal photo
+        let filename = "meals/\(userID)/\(UUID().uuidString).jpg"
+        let storageRef = Storage.storage().reference().child(filename)
+        
+        // Upload the image to Firebase Storage
+        storageRef.putData(imageData, metadata: nil) { metadata, error in
+            if let error = error {
+                print("❌ Upload failed: \(error.localizedDescription)")
+                completion(.failure(error))
+                return
+            }
+
+            // Get the image download URL
+            storageRef.downloadURL { url, error in
+                if let error = error {
+                    print("❌ Failed to fetch download URL: \(error.localizedDescription)")
+                    completion(.failure(error))
+                    return
+                }
+                
+                if let urlString = url?.absoluteString {
+                    print("✅ Uploaded image URL: \(urlString)")
+                    completion(.success(urlString))
+                }
+            }
+        }
+    }
 }
 
