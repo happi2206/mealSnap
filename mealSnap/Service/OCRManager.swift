@@ -4,11 +4,6 @@
 //
 //  Created by Maher Parkar on 21/10/2025.
 //
-
-
-//
-//  OCRManager.swift
-//  MealSnap
 //
 //  Uses Vision framework for text recognition on product labels or packaging.
 //

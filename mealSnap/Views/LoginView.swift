@@ -1,139 +1,231 @@
 //
 //  LoginView.swift
-//  mealSnap
+//  MealSnap
 //
 //  Created by Rujeet Prajapati on 20/10/2025.
 //
 
 import SwiftUI
 
-/// View for user login and signup.
 struct LoginView: View {
+    @EnvironmentObject private var authVM: AuthViewModel
+    @Environment(\.dismiss) private var dismiss
+    @State private var isSignUp = false
+    @State private var showPassword = false
+    @State private var showConfirmPassword = false
+    @State private var confirmPassword = ""
+    @FocusState private var focusedField: Field?
     
-    // MARK: - State
-    @State var isSignUp: Bool = false // Toggle between login and signup
-    @State private var showPassword = false // Toggle password visibility
-    
-    // MARK: - Environment Object
-    @EnvironmentObject var authVM: AuthViewModel
+    private enum Field: Hashable {
+        case name, email, password, confirmPassword
+    }
     
     var body: some View {
-        VStack(spacing: 20) {
+        ZStack {
+            Color.appBackground.ignoresSafeArea()
             
-            // MARK: - App Logo
-//            Image("logo")
-//                .resizable()
-//                .scaledToFit()
-            
-            // MARK: - Heading
-            if(isSignUp){
-                Text("Create Account")
-                    .font(.largeTitle)
-                    .bold()
-            }
-            
-            // MARK: - Name Field (Signup only)
-            if(isSignUp){
-                HStack {
-                    Image(systemName: "person")
-                        .foregroundColor(.gray)
-                    TextField("User Name", text: $authVM.name)
-                        .keyboardType(.alphabet)
-                        .autocapitalization(.none)
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 30) {
+                    header
+                    formCard
+                    togglePrompt
                 }
-                .padding()
-                .background(Color(.secondarySystemBackground))
-                .cornerRadius(12)
+                .padding(.horizontal, 24)
+                .padding(.top, 32)
+                .padding(.bottom, 40)
             }
-            
-            // MARK: - Email Field
-            HStack {
-                Image(systemName: "envelope")
-                    .foregroundColor(.gray)
-                TextField("Email", text: $authVM.email)
-                    .keyboardType(.emailAddress)
-                    .autocapitalization(.none)
-            }
-            .padding()
-            .background(Color(.secondarySystemBackground))
-            .cornerRadius(12)
-            
-            // MARK: - Password Field
-            HStack {
-                Image(systemName: "lock")
-                    .foregroundColor(.gray)
-                ZStack(alignment: .trailing) {
-                    if showPassword {
-                        TextField("Password", text: $authVM.password)
-                            .autocapitalization(.none)
-                    } else {
-                        SecureField("Password", text: $authVM.password)
-                            .autocapitalization(.none)
-                    }
-                    
-                    // Toggle password visibility button'
-                    Button(action: { showPassword.toggle() }) {
-                        Image(systemName: showPassword ? "eye.slash" : "eye")
-                            .foregroundColor(.gray)
-                    }
-                }
-            }
-            .padding()
-            .background(Color(.secondarySystemBackground))
-            .cornerRadius(12)
-            
-            // MARK: - Error Message
-            if !authVM.errorMessage.isEmpty {
-                Text(authVM.errorMessage)
-                    .foregroundColor(.red)
-                    .font(.caption)
-                    .padding(.horizontal)
-            }
-            
-            // MARK: - Login / Signup Button
-            Button(action: {
-                Task {
-                    if isSignUp {
-                        await authVM.signUp()
-                    } else {
-                        await authVM.signIn()
-                    }
-                }
-            }) {
-                if authVM.isLoading {
-                    // Loading spinner while performing network call
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .cornerRadius(12)
-                    
-                } else {
-                    Text(isSignUp ? "Sign Up" : "Log In")
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .cornerRadius(12)
-                        .font(.headline)
-                }
-            }
-            
-            // MARK: - Toggle between Login and Signup
-            Button(isSignUp ? "Already have an account? Log In" :
-                    "Don't have an account? Sign Up") {
-                isSignUp.toggle()
-                authVM.errorMessage = ""
-            }
-                    .font(.footnote)
-                    .padding(.top, 10)
-            
         }
-        .padding()
+        .preferredColorScheme(.dark)
+        .onTapGesture {
+            focusedField = nil
+        }
+    }
+    
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(isSignUp ? "Create your MealSnap account" : "Welcome back to MealSnap")
+                .font(.largeTitle.bold())
+                .foregroundStyle(.white)
+            Text(isSignUp ? "Join the community and capture smarter meals." : "Continue tracking your meals effortlessly.")
+                .font(.body)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 12)
+    }
+    
+    private var formCard: some View {
+        Card(edges: EdgeInsets(top: 26, leading: 24, bottom: 26, trailing: 24)) {
+            VStack(spacing: 20) {
+                if isSignUp {
+                    AuthField(
+                        icon: "person.circle",
+                        placeholder: "Full name",
+                        text: $authVM.name,
+                        keyboard: .namePhonePad
+                    )
+                    .focused($focusedField, equals: .name)
+                }
+                
+                AuthField(
+                    icon: "envelope",
+                    placeholder: "Email address",
+                    text: $authVM.email,
+                    keyboard: .emailAddress,
+                    textInput: .never
+                )
+                .focused($focusedField, equals: .email)
+                
+                PasswordField(
+                    icon: "lock",
+                    placeholder: "Password",
+                    text: $authVM.password,
+                    isShowing: $showPassword
+                )
+                .focused($focusedField, equals: .password)
+                
+                if isSignUp {
+                    PasswordField(
+                        icon: "lock.rotation",
+                        placeholder: "Confirm password",
+                        text: $confirmPassword,
+                        isShowing: $showConfirmPassword
+                    )
+                    .focused($focusedField, equals: .confirmPassword)
+                }
+                
+                if !authVM.errorMessage.isEmpty {
+                    ErrorText(message: authVM.errorMessage)
+                        .transition(.opacity)
+                }
+                
+                PrimaryButton(
+                    title: isSignUp ? "Sign Up" : "Log In",
+                    systemImage: isSignUp ? "person.badge.plus" : "arrow.right.circle.fill"
+                ) {
+                    Task { await submitAction() }
+                }
+                .disabled(authVM.isLoading)
+                .overlay(alignment: .center) {
+                    if authVM.isLoading {
+                        ProgressView()
+                            .progressViewStyle(.circular)
+                            .tint(.white)
+                    }
+                }
+            }
+        }
+    }
+    
+    private var togglePrompt: some View {
+        HStack(spacing: 6) {
+            Text(isSignUp ? "Already have an account?" : "New to MealSnap?")
+                .foregroundStyle(.secondary)
+            Button {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                    isSignUp.toggle()
+                    authVM.errorMessage = ""
+                    authVM.password.removeAll()
+                    confirmPassword.removeAll()
+                }
+            } label: {
+                Text(isSignUp ? "Log In" : "Create one")
+                    .fontWeight(.semibold)
+                    .foregroundStyle(Color.accentPrimary)
+            }
+        }
+        .font(.footnote)
+    }
+    
+    private func submitAction() async {
+        if isSignUp {
+            guard authVM.password == confirmPassword else {
+                authVM.errorMessage = "Passwords do not match."
+                return
+            }
+            await authVM.signUp()
+        } else {
+            await authVM.signIn()
+        }
+    }
+}
+
+// MARK: - Fields
+
+private struct AuthField: View {
+    var icon: String
+    var placeholder: String
+    @Binding var text: String
+    var keyboard: UIKeyboardType = .default
+    var textInput: TextInputAutocapitalization = .words
+    
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundStyle(Color.accentSecondary)
+            TextField(placeholder, text: $text)
+                .textInputAutocapitalization(textInput)
+                .disableAutocorrection(true)
+                .keyboardType(keyboard)
+                .foregroundStyle(.primary)
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 16)
+        .background(Color.appSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.white.opacity(0.05), lineWidth: 1)
+        )
+    }
+}
+
+private struct PasswordField: View {
+    var icon: String
+    var placeholder: String
+    @Binding var text: String
+    @Binding var isShowing: Bool
+    
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundStyle(Color.accentSecondary)
+            Group {
+                if isShowing {
+                    TextField(placeholder, text: $text)
+                        .textInputAutocapitalization(.never)
+                        .disableAutocorrection(true)
+                } else {
+                    SecureField(placeholder, text: $text)
+                        .textInputAutocapitalization(.never)
+                        .disableAutocorrection(true)
+                }
+            }
+            .foregroundStyle(.primary)
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isShowing.toggle()
+                }
+            } label: {
+                Image(systemName: isShowing ? "eye.slash.fill" : "eye.fill")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+            .accessibilityLabel(isShowing ? "Hide password" : "Show password")
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 16)
+        .background(Color.appSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.white.opacity(0.05), lineWidth: 1)
+        )
     }
 }
 
 #Preview {
-    LoginView().environmentObject(AuthViewModel())
+    LoginView()
+        .environmentObject(AuthViewModel())
+        .preferredColorScheme(.dark)
 }

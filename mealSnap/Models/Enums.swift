@@ -1,5 +1,4 @@
 //
-//  Sex.swift
 //  mealSnap
 //
 //  Created by Maher Parkar on 21/10/2025.

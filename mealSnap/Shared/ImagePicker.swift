@@ -2,7 +2,6 @@
 //  ImagePicker.swift
 //  MealSnap
 //
-//  Created by Farhan Khan on 20/10/2025.
 //
 
 import SwiftUI

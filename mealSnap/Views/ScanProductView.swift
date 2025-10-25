@@ -2,7 +2,6 @@
 //  ScanProductView.swift
 //  MealSnap
 //
-//  Created by Farhan Khan on 21/10/2025.
 //
 
 import SwiftUI

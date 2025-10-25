@@ -28,6 +28,6 @@ struct LabeledField: View {
     LabeledField(
         title: "Name",
         placeholder: "Enter your name",
-        text: .constant("Farhan Khan")
+        text: .constant("Happiness")
     )
 }

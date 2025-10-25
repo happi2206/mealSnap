@@ -6,12 +6,6 @@
 //
 
 
-//
-//  FoodClassificationManager.swift
-//  MealSnap
-//
-//  Handles dedicated food classification using Core ML’s Food101 model.
-//
 
 import Foundation
 import Vision
