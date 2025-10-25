@@ -180,42 +180,44 @@ final class MealStore: ObservableObject {
             return
         }
         
-        var photoPath: String? = nil
-        if let image = selectedImage,
-           let data = image.jpegData(compressionQuality: 0.8) {
-            let filename = "\(UUID().uuidString).jpg"
-            let url = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
-            try? data.write(to: url)
-            photoPath = url.absoluteString
+        let itemsToSave = detectedItems
+        let mealDate = Date()
+        
+        func persistMeal(photoURL: String?) {
+            let meal = MealEntry(
+                date: mealDate,
+                photoURL: photoURL,
+                items: itemsToSave
+            )
+            FirestoreService.shared.saveMealEntry(meal) { [weak self] error in
+                DispatchQueue.main.async {
+                    if let error = error {
+                        self?.errorMessage = error.localizedDescription
+                        self?.softErrorHaptic()
+                    } else {
+                        self?.selectedImage = nil
+                        self?.successHaptic()
+                        self?.getMeals()
+                    }
+                }
+            }
         }
-
-        let newMeal = MealEntry(
-            date: Date(),
-            photoURL: photoPath,
-            items: detectedItems
-        )
         
-        FirestoreService.shared.saveMealEntry(newMeal)
-            selectedImage = nil
-
-        
-//        if let image = selectedImage{
-//            FirestoreService.shared.uploadMealPhoto(image) { result in
-//                switch result {
-//                case .success(let photoURL):
-//                    let newMeal = MealEntry(
-//                        date: Date(),
-//                        photoURL: photoURL,
-//                        items: self.detectedItems
-//                    )
-//                    FirestoreService.shared.saveMealEntry(newMeal)
-//                case .failure(let error):
-//                    print("Error uploading photo: \(error.localizedDescription)")
-//                }
-//            }
-//        }
-        self.successHaptic()
-        getMeals()
+        if let image = selectedImage {
+            FirestoreService.shared.uploadMealPhoto(image) { [weak self] result in
+                switch result {
+                case .success(let urlString):
+                    persistMeal(photoURL: urlString)
+                case .failure(let error):
+                    DispatchQueue.main.async {
+                        self?.errorMessage = "Upload failed: \(error.localizedDescription)"
+                        self?.softErrorHaptic()
+                    }
+                }
+            }
+        } else {
+            persistMeal(photoURL: nil)
+        }
     }
     
     func deleteMeal(_ meal: MealEntry) {
